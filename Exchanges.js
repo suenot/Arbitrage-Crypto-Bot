@@ -13,7 +13,7 @@ const ccxt = require('ccxt'),
       	return args;
       };
 
-var exchanges;
+var exchanges, arbGraph;
 
 function initializeExchanges() {
 	const exchangeIds = Object.keys(keys),
@@ -26,11 +26,12 @@ function initializeExchanges() {
 		promises.push(exchange.loadMarkets());
 		return {
 		    xt: exchange, // the ccxt exchange object
-		    reqQueue: ll.empty() // rate-limited queue of requests
+		    reqQueue: ll.empty(), // rate-limited queue of requests
+		    arbMarkets: undefined,
 		};
 	});
 
-	return Promise.all(promises);
+	return Promise.all(promises).then(initializeArbMarkets);
 }
 
 // add a request suspension on the exchange
@@ -101,33 +102,59 @@ function getArbCoins() {
 function initializeArbMarkets() {
 	const arbCoins = getArbCoins();
 
+	console.log('Arb coins: ' + arbCoins.length);
+
 	for (var i = 0; i < exchanges.length; i++) {
 		const exchange = exchanges[i];
 
 		// only keep markets from that exchange where all coins are in the arb coins set
-		exchange.arbMarkets = exchange.xt.symbols.filter(s => mktToCoins(s).every(c => as.has(arbCoins, c)));
+		exchange.arbMarkets = exchange.xt.symbols.filter(m => mktToCoins(m).every(c => as.has(arbCoins, c))).map(m => { return { symbol: m }; });
 	}
 }
 
-initializeExchanges().then(() => {
-	initializeArbMarkets();
-	for (var i = 0; i < 1; i++) {
-		const exc = exchanges[i];
-		console.log(exc.xt.name, exc.arbMarkets.length);
+// requires exchanges are initialized
+function getPrices() {
+	const promises = [];
 
-	    const exchange = exchanges[i],
-	          t = Date.now();
-    
-	    console.log('Should be ' + exchange.xt.rateLimit + ' ms apart');
-	    newRequest(() => console.log('1: ' + (Date.now() - t)), exchange);
-	    newRequest(() => console.log('2: ' + (Date.now() - t)), exchange);
-	    newRequest(() => console.log('3: ' + (Date.now() - t)), exchange);
+	for (var i = 0; i < exchanges.length; i++) {
+		const exchange = exchanges[i],
+		      markets = exchange.arbMarkets;
 
-	    setTimeout(() => newRequest(() => console.log('4: ' + (Date.now() - t)), exchange), 1000);
-	    setTimeout(() => newRequest(() => console.log('5: ' + (Date.now() - t)), exchange), 2000);
+		for (var j = 0; j < markets.length; j++) {
+			const market = markets[j];
 
-	    setTimeout(() => newRequest(() => console.log('6: ' + (Date.now() - t)), exchange), 7000);
+			promises.push(newRequest(() => exchange.xt.fetchOrderBook(market.symbol), exchange).then(book => {
+                const bid = book.bids.length ? book.bids[0][0] : undefined,
+                      ask = book.asks.length ? book.asks[0][0] : undefined,
+                      spread = (bid && ask) ? ask - bid : undefined;
+
+                market.bid = bid;
+                market.ask = ask;
+                market.spread = spread;
+			}));
+		}
 	}
+
+	return Promise.all(promises);
+}
+
+// requires exchanges are initialized
+function getArbGraph() {
+	const g = gr.empty();
+
+
+
+}
+
+initializeExchanges().then(() => {
+	for (var i = 0, sum = 0; i < exchanges.length; i++) {
+		const exc = exchanges[i];
+		console.log(exc.xt.name, exc.arbMarkets);
+		sum += exc.arbMarkets.length;
+
+	}
+
+	console.log('Total markets: ' + sum);
 });
 
 
