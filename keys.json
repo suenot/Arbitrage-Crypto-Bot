@@ -1,0 +1,51 @@
+{
+	"bittrex": {
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***",
+		"rateLimit": 1000
+	},
+
+	"binance": {
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***",
+		"rateLimit": 100
+	},
+
+	"bitfinex": {
+		"uid": "***REMOVED***",
+		"apiKey": "Lm8KBHaAFiaWzzsW3mFcnI1N1GzW9RnsY83UsQp1usj",
+		"secret": "bT6hjRWQNzSIT8OwI41I2rTfE7BfduWl4ZBK2Nxuh1d",
+		"rateLimit": 1000
+	},
+
+	"bleutrade": {
+		"uid": "***REMOVED***",
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***"
+	},
+
+	"coss": {
+		"uid": "***REMOVED***",
+		"apiKey": "ZDNFZnI0dGpBcHYzYjEvaUF1YUdlTHM5Z2U4bmFtN3JzNk5PU1JXQ21qeXBpNHpYUlIrUUdnU2tXSXhKLy90ZnhlNWFxRW4zazNYakl0eDkyTDEremtKcXhOZ3pFTXBwenNhSytJVUg1cjg9",
+		"secret": "ReXpVWdcatenlspaLwGKdeN0+Cb2BQtXNUxNj6O7ncM=",
+		"rateLimit": 75
+	},
+
+	"kucoin": {
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***",
+		"rateLimit": 1000
+	},
+
+	"kraken": {
+		"uid": "***REMOVED***",
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***"
+	},
+
+	"cobinhood": {
+		"apiKey": "***REMOVED***",
+		"secret": "***REMOVED***"
+	}
+
+}
