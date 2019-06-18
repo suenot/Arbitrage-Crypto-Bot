@@ -21,14 +21,18 @@ function initializeExchanges() {
 
 	exchanges = exchangeIds.map(id => {
 		const exchangeClass = ccxt[id],
-		      exchange = new exchangeClass(opts(keys[id]));
+		      exchange = new exchangeClass(opts(keys[id])),
+		      obj = {
+		        xt: exchange, // the ccxt exchange object
+		        name: exchange.name, // pulled out for convenience
+		        reqQueue: ll.empty(), // rate-limited queue of requests
+		        arbMarkets: undefined, // set once initialize arb markets is called
+		        loaded: false, // set to true once promise resolves successfully
+		      };
 
-		promises.push(exchange.loadMarkets());
-		return {
-		    xt: exchange, // the ccxt exchange object
-		    reqQueue: ll.empty(), // rate-limited queue of requests
-		    arbMarkets: undefined,
-		};
+		promises.push(exchange.loadMarkets().then(() => obj.loaded = true, () => obj.loaded = false));
+
+		return obj;
 	});
 
 	return Promise.all(promises).then(initializeArbMarkets);
@@ -113,7 +117,7 @@ function initializeArbMarkets() {
 }
 
 // requires exchanges are initialized
-function getPrices() {
+function getPrices(doMonitor) {
 	const promises = [];
 
 	for (var i = 0; i < exchanges.length; i++) {
@@ -131,9 +135,11 @@ function getPrices() {
                 market.bid = bid;
                 market.ask = ask;
                 market.spread = spread;
-			}));
+			}, error => console.log(error)));
 		}
 	}
+	if (doMonitor)
+	    monitorRequests();
 
 	return Promise.all(promises);
 }
@@ -143,18 +149,34 @@ function getArbGraph() {
 	const g = gr.empty();
 
 
-
 }
 
-initializeExchanges().then(() => {
-	for (var i = 0, sum = 0; i < exchanges.length; i++) {
-		const exc = exchanges[i];
-		console.log(exc.xt.name, exc.arbMarkets);
-		sum += exc.arbMarkets.length;
-
+initializeExchanges().then(() => getPrices(true).then(() => {
+	const exchangeCopies = [];
+	for (var i = 0; i < exchanges.length; i++) {
+		const exchange = exchanges[i],
+		      copy = {
+		      	name: exchange.name,
+		      	arbMarkets: exchange.arbMarkets
+		      };
+		exchangeCopies.push(copy);
 	}
+	fs.writeFileSync('./marketPrices.json', JSON.stringify(exchangeCopies));
+}));
 
-	console.log('Total markets: ' + sum);
-});
+function monitorRequests() {
+    var handle = setInterval(() => {
+    	if (exchanges.every(e => e.reqQueue.s === 0)) {
+    		console.log('Done with requests');
+    		return clearInterval(handle);
+    	}
+
+    	console.log('\n\n');
+    
+    	for (var i = 0; i < exchanges.length; i++)
+    		console.log(exchanges[i].name + ' request queue size: ' + exchanges[i].reqQueue.s);
+    
+    }, 1000);
+}
 
 

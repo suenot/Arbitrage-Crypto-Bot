@@ -11,13 +11,6 @@
 		"rateLimit": 100
 	},
 
-	"bitfinex": {
-		"uid": "***REMOVED***",
-		"apiKey": "Lm8KBHaAFiaWzzsW3mFcnI1N1GzW9RnsY83UsQp1usj",
-		"secret": "bT6hjRWQNzSIT8OwI41I2rTfE7BfduWl4ZBK2Nxuh1d",
-		"rateLimit": 1000
-	},
-
 	"bleutrade": {
 		"uid": "***REMOVED***",
 		"apiKey": "***REMOVED***",
