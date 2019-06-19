@@ -3,6 +3,7 @@ const ccxt = require('ccxt'),
       as = require('./ArraySet'),
       ll = require('./LinkedList'),
       fs = require('fs'),
+      big = require('bignumber.js'),
       keys = JSON.parse(fs.readFileSync('./keys.json', 'utf8')),
       mktToCoins = mkt => mkt.includes('/') ? mkt.split('/') : [ mkt ], // market symbol (a slash pair) to coins array
       opts = (args) => {
@@ -13,7 +14,11 @@ const ccxt = require('ccxt'),
       	return args;
       };
 
-var exchanges, arbGraph;
+big.set({ DECIMAL_PLACES: 15 });
+
+var exchanges, // array of exchange objects
+    exchangeMap = {}, // map from exchange ids to objects in the above exchanges array
+    arbGraph;
 
 function initializeExchanges() {
 	const exchangeIds = Object.keys(keys),
@@ -24,11 +29,14 @@ function initializeExchanges() {
 		      exchange = new exchangeClass(opts(keys[id])),
 		      obj = {
 		        xt: exchange, // the ccxt exchange object
-		        name: exchange.name, // pulled out for convenience
+		        id: id, // pulled out for convenience
 		        reqQueue: ll.empty(), // rate-limited queue of requests
 		        arbMarkets: undefined, // set once initialize arb markets is called
+		        symbolMap: {}, // maps market symbols to their market objects in arbMarkets (to get price data by symbol)
 		        loaded: false, // set to true once promise resolves successfully
 		      };
+
+		exchangeMap[id] = obj;
 
 		promises.push(exchange.loadMarkets().then(() => obj.loaded = true, () => obj.loaded = false));
 
@@ -112,7 +120,12 @@ function initializeArbMarkets() {
 		const exchange = exchanges[i];
 
 		// only keep markets from that exchange where all coins are in the arb coins set
-		exchange.arbMarkets = exchange.xt.symbols.filter(m => mktToCoins(m).every(c => as.has(arbCoins, c))).map(m => { return { symbol: m }; });
+		exchange.arbMarkets = exchange.xt.symbols.filter(symbol => mktToCoins(symbol).every(c => as.has(arbCoins, c))).map(symbol => {
+			const market = { symbol };
+			exchange.symbolMap[symbol] = market; // add to map so you can reference by symbol
+
+			return market;
+		});
 	}
 }
 
@@ -144,26 +157,6 @@ function getPrices(doMonitor) {
 	return Promise.all(promises);
 }
 
-// requires exchanges are initialized
-function getArbGraph() {
-	const g = gr.empty();
-
-
-}
-
-initializeExchanges().then(() => getPrices(true).then(() => {
-	const exchangeCopies = [];
-	for (var i = 0; i < exchanges.length; i++) {
-		const exchange = exchanges[i],
-		      copy = {
-		      	name: exchange.name,
-		      	arbMarkets: exchange.arbMarkets
-		      };
-		exchangeCopies.push(copy);
-	}
-	fs.writeFileSync('./marketPrices.json', JSON.stringify(exchangeCopies));
-}));
-
 function monitorRequests() {
     var handle = setInterval(() => {
     	if (exchanges.every(e => e.reqQueue.s === 0)) {
@@ -174,9 +167,149 @@ function monitorRequests() {
     	console.log('\n\n');
     
     	for (var i = 0; i < exchanges.length; i++)
-    		console.log(exchanges[i].name + ' request queue size: ' + exchanges[i].reqQueue.s);
+    		console.log(exchanges[i].id + ' request queue size: ' + exchanges[i].reqQueue.s);
     
     }, 1000);
 }
 
+// requires exchanges are initialized
+// given an arbitrage cycle A originating at coin b1, compute how much profit would be made if c units of q1 were arbitraged
+function percentReturn(A, c) {
+	const startQuote = new big(c);
+	var currentStartHolding = startQuote;
+
+	for (var i = 0; i < A.length; i++) {
+
+		const edge = A[i],
+		      metadata = edge._m,
+		      start = edge._s,
+		      end = edge._e,
+		      exchangeId = metadata.exchangeId,
+		      startIsBase = metadata.startIsBase, // if start is base you're a seller, so you accept bid price
+		      base = startIsBase ? start : end,
+		      quote = startIsBase ? end : start,
+		      symbol = base + '/' + quote,
+		      exchange = exchangeMap[exchangeId],
+		      market = exchange.xt.markets[symbol],
+		      percentTradeFee = Math.max(market.taker, market.maker),
+		      marketPrice = new big(exchange.symbolMap[symbol][startIsBase ? 'bid' : 'ask']),
+		      endPerStart = startIsBase ? marketPrice : (new big(1)).dividedBy(marketPrice),
+		      endNoFees = endPerStart.times(currentStartHolding),
+		      endWithFees = endNoFees.times(1 - percentTradeFee);
+
+		if (marketPrice.isNaN())
+			return 'Missing market price';
+
+		// console.log(exchange.id, exchange.symbolMap[symbol]);
+		// console.log('\ncurrent start holding: ' + currentStartHolding);
+		// console.log('percent trade fee: ' + percentTradeFee);
+		// console.log('market price: ' + marketPrice);
+		// console.log('endPerStart: ' + endPerStart);
+		// console.log('endNoFees: ' + endNoFees);
+		// console.log('endWithFees: ' + endWithFees);
+
+		currentStartHolding = endWithFees; // next start is previous end
+
+		// if there's another edge to follow on a different exchange, factor in the cost of doing so
+		if (i !== A.length - 1 && A[i + 1]._m.exchangeId !== exchangeId) {
+			const withdrawalFee = exchange.xt.currencies[end].fee;
+			
+			/*
+
+			THIS AINT IT CHIEF
+
+
+            if (withdrawalFee === undefined)
+				console.log('Exchange ' + edge._m + ' withdrawal fee undefined on ' + base);
+
+
+
+			*/
+			currentStartHolding = currentStartHolding.minus(+(withdrawalFee || 0));
+		}
+	}
+
+	return currentStartHolding.dividedBy(startQuote).minus(1).toNumber();
+}
+
+// requires exchanges initialized
+function getArbGraph() {
+	const G = gr.newGraph();
+
+	for (var i = 0; i < exchanges.length; i++) {
+		const exchange = exchanges[i],
+		      exchangeId = exchange.id,
+		      arbMarkets = exchange.arbMarkets;
+
+		for (var j = 0; j < arbMarkets.length; j++) {
+			const market = arbMarkets[j],
+			      coins = mktToCoins(market.symbol);
+
+			gr.addEdge(G, coins[0], coins[1], { exchangeId, startIsBase: true });
+			gr.addEdge(G, coins[1], coins[0], { exchangeId, startIsBase: false });
+		}
+	}
+
+	return G;
+}
+
+// requires exchanges are initialized
+function loadExchangesFromFile() {
+	const exchangeData = JSON.parse(fs.readFileSync('./priceData/marketPrices1560917049302.json'));
+
+	for (var i = 0; i < exchangeData.length; i++) {
+		const arbMarketData = exchangeData[i].arbMarkets,
+		      symbolMap = exchanges[i].symbolMap;
+
+		for (var j = 0; j < arbMarketData.length; j++) {
+			const marketData = arbMarketData[j],
+			      market = symbolMap[marketData.symbol];
+
+			if (market) {
+				market.bid = marketData.bid;
+                market.ask = marketData.ask;
+                market.spread = marketData.spread;
+			}
+		}
+	}
+}
+
+function exchangeDataToFile() {
+	const exchangeCopies = [];
+	for (var i = 0; i < exchanges.length; i++) {
+		const exchange = exchanges[i],
+		      copy = {
+		      	id: exchange.id,
+		      	arbMarkets: exchange.arbMarkets
+		      };
+		exchangeCopies.push(copy);
+	}
+	fs.writeFileSync('./priceData/marketPrices' + Date.now() + '.json', JSON.stringify(exchangeCopies));
+}
+
+// initializeExchanges().then(() => getPrices(true).then(()  => {
+// 	exchangeDataToFile();
+
+// 	const G = getArbGraph(),
+// 	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]),
+// 	      money = cycles.map(c => { return { cycle: c, pr: percentReturn(c, 1) }; });
+
+// 	console.log('Possible arbitrages: ' + cycles.length);
+// 	const winners = money.filter(x => typeof x.pr === 'number' && x.pr > 0).sort((x, y) => y.pr - x.pr).slice(0, 50);
+
+// 	console.log(JSON.stringify(winners, null, 4));
+// }));
+
+initializeExchanges().then(() => {
+	loadExchangesFromFile();
+
+	const G = getArbGraph(),
+	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]),
+	      money = cycles.map(c => { return { cycle: c, pr: percentReturn(c, 1) }; });
+
+	console.log('Possible arbitrages: ' + cycles.length);
+	const winners = money.filter(x => typeof x.pr === 'number' && x.pr > 0).sort((x, y) => y.pr - x.pr).slice(0, 40);
+
+	console.log(JSON.stringify(winners, null, 4));
+});
 

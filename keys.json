@@ -17,13 +17,6 @@
 		"secret": "***REMOVED***"
 	},
 
-	"coss": {
-		"uid": "***REMOVED***",
-		"apiKey": "ZDNFZnI0dGpBcHYzYjEvaUF1YUdlTHM5Z2U4bmFtN3JzNk5PU1JXQ21qeXBpNHpYUlIrUUdnU2tXSXhKLy90ZnhlNWFxRW4zazNYakl0eDkyTDEremtKcXhOZ3pFTXBwenNhSytJVUg1cjg9",
-		"secret": "ReXpVWdcatenlspaLwGKdeN0+Cb2BQtXNUxNj6O7ncM=",
-		"rateLimit": 75
-	},
-
 	"kucoin": {
 		"apiKey": "***REMOVED***",
 		"secret": "***REMOVED***",

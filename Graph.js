@@ -6,17 +6,18 @@ const as = require('./ArraySet'), // an array set with an additional set of vert
 
 function newGraph() {
 	return {
-		_v: {} // set of vertices
+		_v: new Set() // set of vertices
 	};
 }
 
 function addEdge(G, start, end, metadata) {
 
-	G._v[start] = true;
-	G._v[end] = true;
+	G._v.add(start);
+	G._v.add(end);
 
 	const outedges = valOrEmpty(G, start, true),
 	      edge = {
+	      	_s: start,
 	      	_e: end,
 	      	_m: metadata
 	      };
@@ -33,7 +34,7 @@ function getEdges(G, start, end) {
 }
 
 function simpleDigraph(G) {
-	const vertices = Object.keys(G._v),
+	const vertices = Array.from(G._v),
 	      Gp = newGraph();
 
 	for (var i = 0; i < vertices.length; i++) {
@@ -47,4 +48,36 @@ function simpleDigraph(G) {
 	return Gp;
 }
 
-module.exports = { newGraph, addEdge, getNeighbors, getEdges, simpleDigraph };
+// given a set of vertices S, find all cycles of length N or less with a vertex in S
+// (can later be modified to only find cycles which satisfy some predicate (ie. % return > threshold))
+function getAllNCyclesFromS(G, n, S) {
+	const cycles = [];
+
+	for (var i = 0; i < S.length; i++)
+		dfs(G, S[i], n, [], cycles);
+
+	return cycles;
+}
+
+// dfs from v, taking up to depth edges, accumulating the path taken in acc, and adding cycles to cycles
+// because traversal is in visit order, no equivalent cycles can be returned
+function dfs(G, v, depth, acc, cycles) {
+	if (depth === 0) return;
+
+	const N = getNeighbors(G, v);
+
+	for (var i = 0; i < N.length; i++) {
+		const nextAcc = acc.slice(),
+		      edge = N[i],
+		      endpoint = edge._e;
+
+		nextAcc.push(edge);
+
+		if (acc.length > 0 && acc[0]._s === endpoint)
+			cycles.push(nextAcc);
+
+		dfs(G, endpoint, depth - 1, nextAcc, cycles);
+	}
+}
+
+module.exports = { newGraph, addEdge, getNeighbors, getEdges, simpleDigraph, getAllNCyclesFromS };
