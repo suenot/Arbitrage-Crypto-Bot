@@ -211,8 +211,7 @@ function percentReturn(A, c, priceOverrides) {
 		      metadata = edge._m,
 		      start = edge._s,
 		      end = edge._e,
-		      exchangeId = metadata.exchangeId,
-		      startIsBase = metadata.startIsBase, // if start is base you're a seller, so you accept bid price
+		      { exchangeId, startIsBase } = metadata, // if start is base you're a seller, so you accept bid price
 		      base = startIsBase ? start : end,
 		      quote = startIsBase ? end : start,
 		      symbol = base + '/' + quote,
@@ -400,7 +399,7 @@ function updateSnapshots() {
 		const { cycle, pr } = cyclesOnRadar[i];
 
 		if (pr > 0.05)
-			arbCycles.push({ cycle, hash: sha(cycle), pr });
+			as.add(arbCycles, { cycle, hash: sha(cycle), pr });
 
 		for (var j = 0; j < cycle.length; j++) // pull data on anything in cycles on radar (above 0.01)
 			marketIds.add(edgeToMarketId(cycle[j]));
