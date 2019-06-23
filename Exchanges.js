@@ -5,12 +5,8 @@ const ccxt = require('ccxt'),
       fs = require('fs'),
       big = require('bignumber.js'),
       sha = require('object-hash'),
-      runId = +Date.now(),
-      log = require('simple-node-logger').createSimpleLogger({
-        logFilePath: './logs/' + runId + '.log',
-        timestampFormat:'YYYY-MM-DD HH:mm:ss.SSS',
-      }),
       keys = JSON.parse(fs.readFileSync('./keys.json', 'utf8')),
+      timestamp = () => new Date((new Date()).toLocaleString('en-US', { month: 'short', day: 'numeric', timeZone: 'America/New_York', timeZoneName: undefined, hour: '2-digit', minute: '2-digit', second: '2-digit' })),
       edgeToMarketId = edge => (edge._m.startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s)) + ':' + edge._m.exchangeId,
       getPriceId = (symbol, exchangeId, startIsBase) => symbol + ':' + exchangeId + '|' + (startIsBase ? 'bid' : 'ask'),
       mktToCoins = mkt => mkt.includes('/') ? mkt.split('/') : [ mkt ], // market symbol (a slash pair) to coins array
@@ -20,9 +16,20 @@ const ccxt = require('ccxt'),
       	args.enableRateLimit = args.enableRateLimit !== false, // true unless explicitly false
       	args.nonce = function () { return this.milliseconds() };
       	return args;
-      };
+      },
+      deltaTString = deltaMs => {
+      	const days =  Math.floor(deltaMs / 86400000), // hours*minutes*seconds*milliseconds
+      	      hours = Math.floor((deltaMs - days * 86400000) / 3600000),
+      	      min = Math.round((deltaMs - days * 86400000 - hours * 3600000) / 60000);
+      	return (days === 0 ? '' : days + (days === 1 ? ' day ' : ' days ')) + (hours === 0 ? '' : hours + (hours === 1 ? ' hour ' : ' hours ')) + min + (min === 1 ? ' min' : ' mins');
+      },
+      runId = timestamp(),
+      log = require('simple-node-logger').createSimpleLogger({
+        logFilePath: './logs/' + runId + '.log',
+        timestampFormat:'MM-DD HH:mm:ss',
+      });
 
-big.set({ DECIMAL_PLACES: 15 });
+big.set({ DECIMAL_PLACES: 20 });
 
 var exchanges, // array of exchange objects
     exchangeMap = {}, // map from exchange ids to objects in the above exchanges array
@@ -305,7 +312,7 @@ function exchangeDataToFile() {
 		      };
 		exchangeCopies.push(copy);
 	}
-	fs.writeFileSync('./priceData/marketPrices' + Date.now() + '.json', JSON.stringify(exchangeCopies));
+	fs.writeFileSync('./priceData/marketPrices' + timestamp() + '.json', JSON.stringify(exchangeCopies));
 }
 
 // initializeExchanges().then(() => getPrices(true).then(()  => {
@@ -376,11 +383,11 @@ initializeExchanges().then(loopSnapshots).catch(er => log.error('Error initializ
 
 function updateSnapshots() {
 
-	const curTime = (new Date()).toLocaleString('en-US', { timezone: 'EST', timezoneName: 'short' }),
+	const curTime = timestamp(),
 	      G = getArbGraph(),
 	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
-	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.06 && x.pr < 0.3).sort((x, y) => y.pr - x.pr),
+	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.3).sort((x, y) => y.pr - x.pr),
 	      newArbCyclesHashes = as.empty();
 
 	marketIds = new Set();
@@ -443,7 +450,7 @@ function updateSnapshots() {
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
 			newestVisit.endTime = curTime;
-			newestVisit.timeProfitable = newestVisit.endTime - newestVisit.startTime;
+			newestVisit.timeProfitable = deltaTString(newestVisit.endTime - newestVisit.startTime);
 			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
 			newestVisit.worstCasePr = percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
 			delete newestVisit.totalPr;
