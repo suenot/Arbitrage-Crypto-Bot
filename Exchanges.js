@@ -23,6 +23,9 @@ const ccxt = require('ccxt'),
       	      min = Math.round((deltaMs - days * 86400000 - hours * 3600000) / 60000);
       	return (days === 0 ? '' : days + (days === 1 ? ' day ' : ' days ')) + (hours === 0 ? '' : hours + (hours === 1 ? ' hour ' : ' hours ')) + min + (min === 1 ? ' min' : ' mins');
       },
+      newVisit = curTime => {
+      	return { startTime: curTime, maxPr: 0, worstCasePrices: {}, prs: [], totalPr: 0, timeSteps: 0 };
+      },
       runId = timestamp(),
       log = require('simple-node-logger').createSimpleLogger({
         logFilePath: './logs/' + runId + '.log',
@@ -392,8 +395,6 @@ function updateSnapshots() {
 
 	marketIds = new Set(); // market ids of those to pull
 
-
-	console.log('THIS MANY CYCLES: ' + cyclesOnRadar.length);
 	log.info('\nUpdating snapshots');
 
 	// add all markets which should be on the radar to the set of those to pull, and to arbCycles the profitable cycles to snapshot
@@ -412,17 +413,15 @@ function updateSnapshots() {
 		const { hash, cycle, pr } = arbCycles[i],
 		      snapshot = arbCycleSnapshots._elem[hash] || {
 		      	cycle,
-		      	visits:[{
-		      		startTime: curTime,
-		      		maxPr: 0,
-		      		worstCasePrices: {},
-		      		prs: [],
-		      		totalPr: 0,
-		      		timeSteps: 0
-		      	}]
+		      	visits:[ newVisit() ]
 		      },
-		      visit = snapshot.visits[snapshot.visits.length - 1],
-		      worstCasePrices = visit.worstCasePrices;
+		      visits = snapshot.visits;
+
+		if (visits[visits.length - 1].endTime) // if last visit already ended, create a new one
+			visits.push(newVisit());
+
+		const visit = visits[visits.length - 1], // the visit this update is a part of
+		      { worstCasePrices } = visit; 
 
 		as.add(arbCycleSnapshots, snapshot); // redundant add if the above || short circuited
 
