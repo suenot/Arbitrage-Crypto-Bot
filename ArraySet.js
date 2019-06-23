@@ -30,7 +30,7 @@ function add() {
 function _add(as, elem) {
 	const hash = (as._hash || sha)(elem);
 
-	if (as._elem.has(hash)) // redundant element
+	if (as._hash ? as._elem[hash] : as._elem.has(hash)) // redundant element
 		return;
 
 	if (as._hash) // custom hash function, _elem is a map

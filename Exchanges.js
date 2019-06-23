@@ -139,7 +139,7 @@ function initializeArbMarkets() {
 }
 
 // requires exchanges are initialized
-// gets all market prices by default, can be supplied a predicate on symbols and exchanges
+// gets all market prices by default, can be supplied a predicate on symbols and exchangeIds
 // to only pull those passing the predicate
 function getPrices(doMonitor, marketPredicate) {
 	const promises = [];
@@ -151,7 +151,7 @@ function getPrices(doMonitor, marketPredicate) {
 		for (var j = 0; j < markets.length; j++) {
 			const market = markets[j];
 
-			if (marketPredicate && marketPredicate(symbol, exchange))
+			if (!marketPredicate || marketPredicate(market.symbol, exchange.id))
 			    promises.push(newRequest(() => exchange.xt.fetchOrderBook(market.symbol), exchange).then(book => {
                     const bid = book.bids.length ? book.bids[0][0] : undefined,
                           ask = book.asks.length ? book.asks[0][0] : undefined,
@@ -165,6 +165,8 @@ function getPrices(doMonitor, marketPredicate) {
 	}
 	if (doMonitor)
 	    monitorRequests();
+
+	console.log('Getting ' + promises.length + ' prices');
 
 	return Promise.all(promises);
 }
@@ -341,38 +343,41 @@ function exchangeDataToFile() {
 
       */
 
-const prevArbCyclesHashes = as.empty(), // hashes of all arb cycles which are currently profitable
-      arbCycleSnapshots = as.empty(snapshot => sha(shapshot.cycle)),
-      updateTimeStep = 1000 * 60 * 6, // 6 minutes between updates of just interesting markets
-      updatesPerRediscover = 2, // 12 minutes between updating all markets
-      updateStep = 0,
+const arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),
+      updateTimeStep = 1000 * 60 * 3, // 3 minutes between updates of just interesting markets
+      updatesPerRediscover = 3, // 9 minutes between updating all markets
       runId = +Date.now();
 
-var marketIds, // set of the symbol/exchangeId pairs of those needing to be pulled
-    lastUpdate; // last time apis were queried
+var prevArbCyclesHashes = as.empty(), // hashes of all arb cycles which are currently profitable
+    marketIds, // set of the symbol/exchangeId pairs of those needing to be pulled
+    lastUpdate, // last time apis were queried
+    updateStep = 0;
+
+console.log('Bot run ' + runId);
 
 function loopSnapshots() {
 	const dontLoadAll = updateStep % updatesPerRediscover !== 0;
-	console.log('Loading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices');
-	loadExchangesFromFile();
-	// getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
+	console.log('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
+	// loadExchangesFromFile();
+	lastUpdate = Date.now();
+	getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
 	    updateSnapshots();
 	    const timeTilNext = updateTimeStep + lastUpdate - Date.now();
 	    updateStep++;
-	    setTimeout(loopSnapshots, Math.max(timeTilNext, 0));
-	// });
+	    setTimeout(loopSnapshots, Math.max(timeTilNext, 1000 * 60));
+	});
 }
 
 initializeExchanges().then(loopSnapshots);
 
 function updateSnapshots() {
 
-	const curTime = Date.now().toLocaleString(),
+	const curTime = (new Date()).toLocaleString("en-US"),
 	      G = getArbGraph(),
 	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
-	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.07 && x.pr < 0.3).sort((x, y) => y.pr - x.pr),
-	      newArbCycleHashes = as.empty();
+	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.06 && x.pr < 0.3).sort((x, y) => y.pr - x.pr),
+	      newArbCyclesHashes = as.empty();
 
 	marketIds = new Set();
 
@@ -383,23 +388,7 @@ function updateSnapshots() {
 		as.add(newArbCyclesHashes, sha(cycle));
 
 		for (var j = 0; j < cycle.length; j++)
-			marketIds.add(edgeToMarketId(edge));
-	}
-
-	// finalize the visits which just finished
-	for (var i = 0; i < prevArbCyclesHashes.length; i++) {
-		const hash = prevArbCyclesHashes[i];
-		if (as.has(prevArbCyclesHashes, hash) && !as.has(newArbCyclesHashes, hash)) {
-			const snapshot = arbitrageCycleSnapshots._elem[hash],
-			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
-
-			newestVisit.endTime = curTime;
-			newestVisit.timeProfitable = newestVisit.endTime - newestVisit.startTime;
-			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
-			newestVisit.worstCasePr = percentReturn(A, 1, newestVisit.worstCasePrices);
-			delete newestVisit.totalPr;
-			delete newestVisit.timeSteps;
-		}
+			marketIds.add(edgeToMarketId(cycle[j]));
 	}
 
 	// update the snapshots with the current price data
@@ -411,7 +400,7 @@ function updateSnapshots() {
 		      	visits:[{
 		      		startTime: curTime,
 		      		maxPr: 0,
-		      		worstCase: {},
+		      		worstCasePrices: {},
 		      		prs: [],
 		      		totalPr: 0,
 		      		timeSteps: 0
@@ -420,7 +409,7 @@ function updateSnapshots() {
 		      visit = snapshot.visits[snapshot.visits.length - 1],
 		      worstCasePrices = visit.worstCasePrices;
 
-		as.add(arbitrageCycleSnapshots, snapshot); // redundant add if the above || short circuited
+		as.add(arbCycleSnapshots, snapshot); // redundant add if the above || short circuited
 
 		visit.prs.push(cycle.pr);
 		visit.totalPr += cycle.pr;
@@ -430,10 +419,10 @@ function updateSnapshots() {
 			visit.maxPr = cycle.pr;
 
 		// update the worst case prices
-		for (var j = 0; j < visit.cycle.length; j++) {
-			const edge = visit.cycle[j],
+		for (var j = 0; j < snapshot.cycle.length; j++) {
+			const edge = snapshot.cycle[j],
 			      { exchangeId, startIsBase } = edge._m,
-			      symbol = meta.startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s),
+			      symbol = startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s),
 			      priceId = getPriceId(symbol, exchangeId, startIsBase),
 			      curPrice = exchangeMap[exchangeId].symbolMap[symbol][startIsBase ? 'bid' : 'ask'];
 
@@ -441,8 +430,27 @@ function updateSnapshots() {
 		}
 	}
 
+
+	// finalize the visits which just finished
+	for (var i = 0; i < prevArbCyclesHashes.length; i++) {
+		const hash = prevArbCyclesHashes[i];
+		if (as.has(prevArbCyclesHashes, hash) && !as.has(newArbCyclesHashes, hash)) {
+			const snapshot = arbCycleSnapshots._elem[hash],
+			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
+
+			newestVisit.endTime = curTime;
+			newestVisit.timeProfitable = newestVisit.endTime - newestVisit.startTime;
+			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
+			newestVisit.worstCasePr = percentReturn(A, 1, newestVisit.worstCasePrices);
+			delete newestVisit.totalPr;
+			delete newestVisit.timeSteps;
+		}
+	}
+
+	prevArbCyclesHashes = newArbCyclesHashes;
+
 	console.log('Good arbitrages: ' + cycles.length);
-	console.log('Top 20: ' JSON.stringify(cycles.slice(0, 20), null, 4));
+	console.log('Top 20 prs: ' + cycles.slice(0, 20).map(x => x.pr));
 
 	fs.writeFileSync('./snapshots/' + runId, JSON.stringify(arbCycleSnapshots, null, 4));
 }

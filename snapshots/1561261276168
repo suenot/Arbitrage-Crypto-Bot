@@ -1,0 +1,821 @@
+[
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "LUN",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "LUN",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.295700956068764,
+                "worstCasePrices": {
+                    "BTC/ETH:bleutrade|bid": 33.31152499,
+                    "LUN/ETH:binance|ask": 0.007838,
+                    "LUN/BTC:bittrex|bid": 0.00030633
+                },
+                "prs": [
+                    0.295700956068764,
+                    0.2937172342682,
+                    0.2937172342682
+                ],
+                "totalPr": 0.8831354246051639,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.242910390909091,
+                "worstCasePrices": {
+                    "GTO/BTC:binance|ask": 0.00000276,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.202301929347826,
+                    0.242910390909091,
+                    0.242910390909091
+                ],
+                "totalPr": 0.688122711166008,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "cobinhood",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.232871766176772,
+                "worstCasePrices": {
+                    "ETH/BTC:cobinhood|ask": 0.029203,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.193598348578208,
+                    0.23041674819639,
+                    0.232871766176772
+                ],
+                "totalPr": 0.65688686295137,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.231090430545034,
+                "worstCasePrices": {
+                    "ETH/BTC:binance|ask": 0.029193,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.192976666585216,
+                    0.229144217276424,
+                    0.231090430545034
+                ],
+                "totalPr": 0.653211314406674,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "kucoin",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.231259136623426,
+                "worstCasePrices": {
+                    "ETH/BTC:kucoin|ask": 0.029204,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.192363920043689,
+                    0.229228448505979,
+                    0.231259136623426
+                ],
+                "totalPr": 0.652851505173094,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "kraken",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.230087851281519,
+                "worstCasePrices": {
+                    "ETH/BTC:kraken|ask": 0.02918,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.191433354243942,
+                    0.227890804268303,
+                    0.230087851281519
+                ],
+                "totalPr": 0.649412009793764,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.228603506502665,
+                "worstCasePrices": {
+                    "ETH/BTC:bittrex|ask": 0.02920544,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.190166315020154,
+                    0.226780199056189,
+                    0.228603506502665
+                ],
+                "totalPr": 0.645550020579008,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.227857733235311,
+                "worstCasePrices": {
+                    "ETH/BTC:bleutrade|ask": 0.02921735,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.18968102007591,
+                    0.225664669412554,
+                    0.227857733235311
+                ],
+                "totalPr": 0.6432034227237751,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BNB",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BNB",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.216228404935673,
+                "worstCasePrices": {
+                    "BNB/BTC:binance|ask": 0.0035118,
+                    "GTO/BNB:binance|ask": 0.0008,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.179962900675935,
+                    0.215708782443604,
+                    0.216228404935673
+                ],
+                "totalPr": 0.611900088055212,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BNB",
+                "_m": {
+                    "exchangeId": "kucoin",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BNB",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.20909661603956,
+                "worstCasePrices": {
+                    "BNB/BTC:kucoin|ask": 0.0035301,
+                    "GTO/BNB:binance|ask": 0.0008,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.173845985834325,
+                    0.20909661603956,
+                    0.20909661603956
+                ],
+                "totalPr": 0.592039217913445,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "GTO",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "GTO",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.195032988001374,
+                "worstCasePrices": {
+                    "BTC/ETH:bleutrade|bid": 33.31152499,
+                    "GTO/ETH:binance|ask": 0.0000952,
+                    "GTO/BTC:bittrex|bid": 0.00000333
+                },
+                "prs": [
+                    0.15787686611196,
+                    0.192898552111899,
+                    0.195032988001374
+                ],
+                "totalPr": 0.545808406225233,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "kucoin",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.141311263995843,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:kucoin|bid": 0.029176
+                },
+                "prs": [
+                    0.141311263995843,
+                    0.141272152544419,
+                    0.141115706738724
+                ],
+                "totalPr": 0.42369912327898596,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "binance",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.141506821252962,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:binance|bid": 0.029179
+                },
+                "prs": [
+                    0.141233041092996,
+                    0.141272152544419,
+                    0.141506821252962
+                ],
+                "totalPr": 0.424012014890377,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.139408958755008,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:bittrex|bid": 0.02915343
+                },
+                "prs": [
+                    0.139408958755008,
+                    0.138520899776667,
+                    0.138748967693708
+                ],
+                "totalPr": 0.416678826225383,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "kraken",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.138663313027831,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:kraken|bid": 0.02915
+                },
+                "prs": [
+                    0.138663313027831,
+                    0.138272824923226,
+                    0.138272824923226
+                ],
+                "totalPr": 0.415208962874283,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.137854278451155,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:bleutrade|bid": 0.02880467
+                },
+                "prs": [
+                    0.137854278451155,
+                    0.137854278451155,
+                    0.125188197807321
+                ],
+                "totalPr": 0.400896754709631,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "cobinhood",
+                    "startIsBase": true
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.12471849499589,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "ETH/BTC:cobinhood|bid": 0.028614
+                },
+                "prs": [
+                    0.120255326364954,
+                    0.1239746335574,
+                    0.12471849499589
+                ],
+                "totalPr": 0.368948454918244,
+                "timeSteps": 3
+            }
+        ]
+    },
+    {
+        "cycle": [
+            {
+                "_s": "BTC",
+                "_e": "BITB",
+                "_m": {
+                    "exchangeId": "bittrex",
+                    "startIsBase": false
+                }
+            },
+            {
+                "_s": "BITB",
+                "_e": "ETH",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": true
+                }
+            },
+            {
+                "_s": "ETH",
+                "_e": "BTC",
+                "_m": {
+                    "exchangeId": "bleutrade",
+                    "startIsBase": false
+                }
+            }
+        ],
+        "visits": [
+            {
+                "startTime": "6/22/2019, 11:45:43 PM",
+                "maxPr": 0.116077157734034,
+                "worstCasePrices": {
+                    "BITB/BTC:bittrex|ask": 1.4e-7,
+                    "BITB/ETH:bleutrade|bid": 0.00000551,
+                    "BTC/ETH:bleutrade|ask": 36.2
+                },
+                "prs": [
+                    0.079080124880949,
+                    0.116077157734034,
+                    0.116077157734034
+                ],
+                "totalPr": 0.311234440349017,
+                "timeSteps": 3
+            }
+        ]
+    }
+]
