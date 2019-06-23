@@ -413,12 +413,12 @@ function updateSnapshots() {
 		const { hash, cycle, pr } = arbCycles[i],
 		      snapshot = arbCycleSnapshots._elem[hash] || {
 		      	cycle,
-		      	visits:[ newVisit() ]
+		      	visits:[ newVisit(curTime) ]
 		      },
 		      visits = snapshot.visits;
 
 		if (visits[visits.length - 1].endTime) // if last visit already ended, create a new one
-			visits.push(newVisit());
+			visits.push(newVisit(curTime));
 
 		const visit = visits[visits.length - 1], // the visit this update is a part of
 		      { worstCasePrices } = visit; 
