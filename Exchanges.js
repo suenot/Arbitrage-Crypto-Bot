@@ -364,7 +364,7 @@ var prevArbCyclesHashes = as.empty(), // hashes of all arb cycles which are curr
     lastUpdate, // last time apis were queried
     updateStep = 0;
 
-log.info('Bot run ' + runId);
+log.info('Bot run: "' + runId + '"');
 
 function loopSnapshots() {
 	const dontLoadAll = updateStep % updatesPerRediscover !== 0;
@@ -462,6 +462,6 @@ function updateSnapshots() {
 
 	log.info('Good arbitrages: ' + cycles.length + '\nTop 20 prs: ' + cycles.slice(0, 20).map(x => x.pr));
 
-	fs.writeFileSync('./snapshots/' + runId, JSON.stringify(arbCycleSnapshots, null, 4));
+	fs.writeFileSync('./snapshots/' + runId + '.snap', JSON.stringify(arbCycleSnapshots, null, 4));
 }
 
