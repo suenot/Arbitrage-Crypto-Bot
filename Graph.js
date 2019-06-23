@@ -51,7 +51,7 @@ function simpleDigraph(G) {
 // given a set of vertices S, find all cycles of length N or less with a vertex in S
 // (can later be modified to only find cycles which satisfy some predicate (ie. % return > threshold))
 function getAllNCyclesFromS(G, n, S) {
-	const cycles = [];
+	const cycles = as.empty();
 
 	for (var i = 0; i < S.length; i++)
 		dfs(G, S[i], n, [], cycles);
@@ -74,7 +74,7 @@ function dfs(G, v, depth, acc, cycles) {
 		nextAcc.push(edge);
 
 		if (acc.length > 0 && acc[0]._s === endpoint)
-			cycles.push(nextAcc);
+			as.add(cycles, nextAcc);
 
 		dfs(G, endpoint, depth - 1, nextAcc, cycles);
 	}
