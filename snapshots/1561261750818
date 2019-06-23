@@ -37,10 +37,11 @@
                 },
                 "prs": [
                     0.2937172342682,
+                    0.294708335315902,
                     0.294708335315902
                 ],
-                "totalPr": 0.5884255695841021,
-                "timeSteps": 2
+                "totalPr": 0.8831339049000041,
+                "timeSteps": 3
             }
         ]
     },
@@ -69,14 +70,15 @@
                 "maxPr": 0.217544872727273,
                 "worstCasePrices": {
                     "GTO/BTC:binance|ask": 0.00000275,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.210297581818182,
-                    0.217544872727273
+                    0.217544872727273,
+                    0.203050290909091
                 ],
-                "totalPr": 0.427842454545455,
-                "timeSteps": 2
+                "totalPr": 0.630892745454546,
+                "timeSteps": 3
             }
         ]
     },
@@ -112,16 +114,17 @@
                 "startTime": "6/22/2019, 11:53:42 PM",
                 "maxPr": 0.209072453471009,
                 "worstCasePrices": {
-                    "BNB/BTC:binance|ask": 0.0035032,
+                    "BNB/BTC:binance|ask": 0.0035041,
                     "GTO/BNB:binance|ask": 0.00079,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.201429590468461,
-                    0.209072453471009
+                    0.209072453471009,
+                    0.193928671512828
                 ],
-                "totalPr": 0.41050204393947,
-                "timeSteps": 2
+                "totalPr": 0.604430715452298,
+                "timeSteps": 3
             }
         ]
     },
@@ -159,14 +162,15 @@
                 "worstCasePrices": {
                     "ETH/BTC:cobinhood|ask": 0.029395,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.200760660349423,
-                    0.204200990187623
+                    0.204200990187623,
+                    0.194171512807876
                 ],
-                "totalPr": 0.404961650537046,
-                "timeSteps": 2
+                "totalPr": 0.5991331633449221,
+                "timeSteps": 3
             }
         ]
     },
@@ -202,16 +206,17 @@
                 "startTime": "6/22/2019, 11:53:42 PM",
                 "maxPr": 0.209580660798995,
                 "worstCasePrices": {
-                    "ETH/BTC:kucoin|ask": 0.029235,
+                    "ETH/BTC:kucoin|ask": 0.029255,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.199313169738158,
-                    0.209580660798995
+                    0.209580660798995,
+                    0.19436381299577
                 ],
-                "totalPr": 0.408893830537153,
-                "timeSteps": 2
+                "totalPr": 0.603257643532923,
+                "timeSteps": 3
             }
         ]
     },
@@ -247,16 +252,17 @@
                 "startTime": "6/22/2019, 11:53:42 PM",
                 "maxPr": 0.20887770471963,
                 "worstCasePrices": {
-                    "ETH/BTC:binance|ask": 0.029252,
+                    "ETH/BTC:binance|ask": 0.029256,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.19886109500486,
-                    0.20887770471963
+                    0.20887770471963,
+                    0.19432298841917
                 ],
-                "totalPr": 0.40773879972449,
-                "timeSteps": 2
+                "totalPr": 0.6020617881436601,
+                "timeSteps": 3
             }
         ]
     },
@@ -292,16 +298,17 @@
                 "startTime": "6/22/2019, 11:53:42 PM",
                 "maxPr": 0.208676981769535,
                 "worstCasePrices": {
-                    "ETH/BTC:kraken|ask": 0.02921,
+                    "ETH/BTC:kraken|ask": 0.02922,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.197433396605323,
-                    0.208676981769535
+                    0.208676981769535,
+                    0.193879247299433
                 ],
-                "totalPr": 0.40611037837485797,
-                "timeSteps": 2
+                "totalPr": 0.5999896256742909,
+                "timeSteps": 3
             }
         ]
     },
@@ -337,16 +344,17 @@
                 "startTime": "6/22/2019, 11:53:42 PM",
                 "maxPr": 0.208421843241392,
                 "worstCasePrices": {
-                    "ETH/BTC:bittrex|ask": 0.02921054,
+                    "ETH/BTC:bittrex|ask": 0.02925879,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.19736666858836,
-                    0.208421843241392
+                    0.208421843241392,
+                    0.192066234949369
                 ],
-                "totalPr": 0.405788511829752,
-                "timeSteps": 2
+                "totalPr": 0.597854746779121,
+                "timeSteps": 3
             }
         ]
     },
@@ -384,14 +392,15 @@
                 "worstCasePrices": {
                     "ETH/BTC:bleutrade|ask": 0.02921734,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.195262889469839,
-                    0.208140514565912
+                    0.208140514565912,
+                    0.193757889392508
                 ],
-                "totalPr": 0.40340340403575103,
-                "timeSteps": 2
+                "totalPr": 0.5971612934282591,
+                "timeSteps": 3
             }
         ]
     },
@@ -429,14 +438,15 @@
                 "worstCasePrices": {
                     "BNB/BTC:kucoin|ask": 0.0035301,
                     "GTO/BNB:binance|ask": 0.00079,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.192274479853011,
-                    0.199413847995843
+                    0.199413847995843,
+                    0.185135111710179
                 ],
-                "totalPr": 0.391688327848854,
-                "timeSteps": 2
+                "totalPr": 0.576823439559033,
+                "timeSteps": 3
             }
         ]
     },
@@ -474,14 +484,15 @@
                 "worstCasePrices": {
                     "BTC/ETH:bleutrade|bid": 33.31152499,
                     "GTO/ETH:binance|ask": 0.00009504,
-                    "GTO/BTC:bittrex|bid": 0.00000334
+                    "GTO/BTC:bittrex|bid": 0.00000332
                 },
                 "prs": [
                     0.163309115188066,
-                    0.175842473989895
+                    0.175842473989895,
+                    0.161844349299539
                 ],
-                "totalPr": 0.339151589177961,
-                "timeSteps": 2
+                "totalPr": 0.5009959384775,
+                "timeSteps": 3
             }
         ]
     },
@@ -515,7 +526,7 @@
         "visits": [
             {
                 "startTime": "6/22/2019, 11:53:42 PM",
-                "maxPr": 0.143657951081267,
+                "maxPr": 0.143814396886962,
                 "worstCasePrices": {
                     "BITB/BTC:bittrex|ask": 1.4e-7,
                     "BITB/ETH:bleutrade|bid": 0.00000551,
@@ -523,10 +534,11 @@
                 },
                 "prs": [
                     0.141272152544419,
-                    0.143657951081267
+                    0.143657951081267,
+                    0.143814396886962
                 ],
-                "totalPr": 0.284930103625686,
-                "timeSteps": 2
+                "totalPr": 0.428744500512648,
+                "timeSteps": 3
             }
         ]
     },
@@ -560,7 +572,7 @@
         "visits": [
             {
                 "startTime": "6/22/2019, 11:53:42 PM",
-                "maxPr": 0.143384170921301,
+                "maxPr": 0.143775285435538,
                 "worstCasePrices": {
                     "BITB/BTC:bittrex|ask": 1.4e-7,
                     "BITB/ETH:bleutrade|bid": 0.00000551,
@@ -568,10 +580,11 @@
                 },
                 "prs": [
                     0.140881038030182,
-                    0.143384170921301
+                    0.143384170921301,
+                    0.143775285435538
                 ],
-                "totalPr": 0.284265208951483,
-                "timeSteps": 2
+                "totalPr": 0.42804049438702096,
+                "timeSteps": 3
             }
         ]
     },
@@ -605,7 +618,7 @@
         "visits": [
             {
                 "startTime": "6/22/2019, 11:53:42 PM",
-                "maxPr": 0.140515712996264,
+                "maxPr": 0.141210070456022,
                 "worstCasePrices": {
                     "BITB/BTC:bittrex|ask": 1.4e-7,
                     "BITB/ETH:bleutrade|bid": 0.00000551,
@@ -613,10 +626,11 @@
                 },
                 "prs": [
                     0.13812060934008,
-                    0.140515712996264
+                    0.140515712996264,
+                    0.141210070456022
                 ],
-                "totalPr": 0.278636322336344,
-                "timeSteps": 2
+                "totalPr": 0.419846392792366,
+                "timeSteps": 3
             }
         ]
     },
@@ -650,7 +664,7 @@
         "visits": [
             {
                 "startTime": "6/22/2019, 11:53:42 PM",
-                "maxPr": 0.139834777341646,
+                "maxPr": 0.140615753550856,
                 "worstCasePrices": {
                     "BITB/BTC:bittrex|ask": 1.4e-7,
                     "BITB/ETH:bleutrade|bid": 0.00000551,
@@ -658,10 +672,11 @@
                 },
                 "prs": [
                     0.137882336818621,
-                    0.139834777341646
+                    0.139834777341646,
+                    0.140615753550856
                 ],
-                "totalPr": 0.277717114160267,
-                "timeSteps": 2
+                "totalPr": 0.418332867711123,
+                "timeSteps": 3
             }
         ]
     },
@@ -703,10 +718,11 @@
                 },
                 "prs": [
                     0.134936802124612,
-                    0.123661428741194
+                    0.123661428741194,
+                    0.132235410584835
                 ],
-                "totalPr": 0.258598230865806,
-                "timeSteps": 2
+                "totalPr": 0.39083364145064103,
+                "timeSteps": 3
             }
         ]
     },
@@ -740,7 +756,7 @@
         "visits": [
             {
                 "startTime": "6/22/2019, 11:53:42 PM",
-                "maxPr": 0.125188197807321,
+                "maxPr": 0.140467573115989,
                 "worstCasePrices": {
                     "BITB/BTC:bittrex|ask": 1.4e-7,
                     "BITB/ETH:bleutrade|bid": 0.00000551,
@@ -748,10 +764,11 @@
                 },
                 "prs": [
                     0.125188197807321,
-                    0.125188197807321
+                    0.125188197807321,
+                    0.140467573115989
                 ],
-                "totalPr": 0.250376395614642,
-                "timeSteps": 2
+                "totalPr": 0.390843968730631,
+                "timeSteps": 3
             }
         ]
     },
@@ -793,10 +810,11 @@
                 },
                 "prs": [
                     0.116077157734034,
-                    0.076606674875776
+                    0.076606674875776,
+                    0.085075014463637
                 ],
-                "totalPr": 0.19268383260981,
-                "timeSteps": 2
+                "totalPr": 0.277758847073447,
+                "timeSteps": 3
             }
         ]
     }
