@@ -372,7 +372,7 @@ initializeExchanges().then(loopSnapshots);
 
 function updateSnapshots() {
 
-	const curTime = (new Date()).toLocaleString("en-US"),
+	const curTime = (new Date()).toLocaleString('en-US'),
 	      G = getArbGraph(),
 	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
@@ -441,7 +441,7 @@ function updateSnapshots() {
 			newestVisit.endTime = curTime;
 			newestVisit.timeProfitable = newestVisit.endTime - newestVisit.startTime;
 			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
-			newestVisit.worstCasePr = percentReturn(A, 1, newestVisit.worstCasePrices);
+			newestVisit.worstCasePr = percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
 			delete newestVisit.totalPr;
 			delete newestVisit.timeSteps;
 		}
