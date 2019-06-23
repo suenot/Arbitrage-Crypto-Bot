@@ -373,10 +373,10 @@ function loopSnapshots() {
 	lastUpdate = Date.now();
 	getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
 	    updateSnapshots();
-	    const timeTilNext = updateTimeStep + lastUpdate - Date.now();
+	    const timeTilNext = Math.max(updateTimeStep + lastUpdate - Date.now(), 1000 * 60);
 	    updateStep++;
 	    log.info('Waiting ' + deltaTString(timeTilNext) + ' before pulling for timestep ' + updateStep + '...');
-	    setTimeout(loopSnapshots, Math.max(timeTilNext, 1000 * 60));
+	    setTimeout(loopSnapshots, timeTilNext);
 	}).catch(err => log.error('Error getting prices: ' + err.stack));
 }
 
@@ -408,7 +408,7 @@ function updateSnapshots() {
 
 	// update the snapshots with the current price data
 	for (var i = 0; i < arbCycles.length; i++) {
-		const { hash, cycle } = arbCycles[i],
+		const { hash, cycle, pr } = arbCycles[i],
 		      snapshot = arbCycleSnapshots._elem[hash] || {
 		      	cycle,
 		      	visits:[{
@@ -425,12 +425,12 @@ function updateSnapshots() {
 
 		as.add(arbCycleSnapshots, snapshot); // redundant add if the above || short circuited
 
-		visit.prs.push(cycle.pr);
-		visit.totalPr += cycle.pr;
+		visit.prs.push(pr);
+		visit.totalPr += pr;
 		visit.timeSteps++;
 
-		if (cycle.pr > visit.maxPr)
-			visit.maxPr = cycle.pr;
+		if (pr > visit.maxPr)
+			visit.maxPr = pr;
 
 		// update the worst case prices
 		for (var j = 0; j < snapshot.cycle.length; j++) {
