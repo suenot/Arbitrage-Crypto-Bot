@@ -172,7 +172,7 @@ function getPrices(doMonitor, marketPredicate) {
                     market.bid = bid;
                     market.ask = ask;
                     market.spread = spread;
-			    }, error => log.error(error)));
+			    }, err => log.error('Error fetching orderbook for ' + market.symbol + ': ' + err.stack)));
 		}
 	}
 	if (doMonitor)
@@ -359,7 +359,7 @@ const arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),
       updateTimeStep = 1000 * 60 * 3, // 3 minutes between updates of just interesting markets
       updatesPerRediscover = 3; // 9 minutes between updating all markets
 
-var prevArbCyclesHashes = as.empty(), // hashes of all arb cycles which are currently profitable
+var prevArbCycles = as.empty(x => x.hash), // hashes of all arb cycles which are currently profitable
     marketIds, // set of the symbol/exchangeId pairs of those needing to be pulled
     lastUpdate, // last time apis were queried
     updateStep = 0;
@@ -369,45 +369,48 @@ log.info('Bot run: "' + runId + '"');
 function loopSnapshots() {
 	const dontLoadAll = updateStep % updatesPerRediscover !== 0;
 	log.info('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
-	// loadExchangesFromFile();
+	loadExchangesFromFile();
 	lastUpdate = Date.now();
 	getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
 	    updateSnapshots();
 	    const timeTilNext = updateTimeStep + lastUpdate - Date.now();
 	    updateStep++;
+	    log.info('Waiting ' + deltaTString(timeTilNext) + ' before pulling for timestep ' + updateStep + '...');
 	    setTimeout(loopSnapshots, Math.max(timeTilNext, 1000 * 60));
-	}).catch(er => log.error(er));
+	}).catch(err => log.error('Error getting prices: ' + err.stack));
 }
 
-initializeExchanges().then(loopSnapshots).catch(er => log.error('Error initializing: ' + er));
+initializeExchanges().then(loopSnapshots).catch(err => log.error('Error initializing: ' + err.stack));
 
 function updateSnapshots() {
 
 	const curTime = timestamp(),
 	      G = getArbGraph(),
-	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
+	      cyclesOnRadar = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
-	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.3).sort((x, y) => y.pr - x.pr),
-	      newArbCyclesHashes = as.empty();
+	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.5).sort((x, y) => y.pr - x.pr), // cycles which could become profitable
+	      arbCycles = as.empty(x => x.hash); // cycles which could be currently profitable/which we should snapshot
 
-	marketIds = new Set();
+	marketIds = new Set(); // market ids of those to pull
 
 	log.info('\nUpdating snapshots');
 
-	for (var i = 0; i < cycles.length; i++) {
-		const cycle = cycles[i].cycle;
-		as.add(newArbCyclesHashes, sha(cycle));
+	// add all markets which should be on the radar to the set of those to pull, and to arbCycles the profitable cycles to snapshot
+	for (var i = 0; i < cyclesOnRadar.length; i++) {
+		const { cycle, pr } = cyclesOnRadar[i];
 
-		for (var j = 0; j < cycle.length; j++)
+		if (pr > 0.05)
+			arbCycles.push({ cycle, hash: sha(cycle), pr });
+
+		for (var j = 0; j < cycle.length; j++) // pull data on anything in cycles on radar (above 0.01)
 			marketIds.add(edgeToMarketId(cycle[j]));
 	}
 
 	// update the snapshots with the current price data
-	for (var i = 0; i < newArbCyclesHashes.length; i++) {
-		const hash = newArbCyclesHashes[i],
-		      cycle = cycles[i],
+	for (var i = 0; i < arbCycles.length; i++) {
+		const { hash, cycle } = arbCycles[i],
 		      snapshot = arbCycleSnapshots._elem[hash] || {
-		      	cycle: cycle.cycle,
+		      	cycle,
 		      	visits:[{
 		      		startTime: curTime,
 		      		maxPr: 0,
@@ -443,9 +446,9 @@ function updateSnapshots() {
 
 
 	// finalize the visits which just finished
-	for (var i = 0; i < prevArbCyclesHashes.length; i++) {
-		const hash = prevArbCyclesHashes[i];
-		if (as.has(prevArbCyclesHashes, hash) && !as.has(newArbCyclesHashes, hash)) {
+	for (var i = 0; i < prevArbCycles.length; i++) {
+		const hash = prevArbCycles[i].hash;
+		if (!arbCycles._elem[hash]) {
 			const snapshot = arbCycleSnapshots._elem[hash],
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
@@ -455,12 +458,13 @@ function updateSnapshots() {
 			newestVisit.worstCasePr = percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
 			delete newestVisit.totalPr;
 			delete newestVisit.timeSteps;
+			delete newestVisit.worstCasePrices;
 		}
 	}
 
-	prevArbCyclesHashes = newArbCyclesHashes;
+	prevArbCycles = arbCycles;
 
-	log.info('Good arbitrages: ' + cycles.length + '\nTop 20 prs: ' + cycles.slice(0, 20).map(x => x.pr));
+	log.info(arbCycles.length + ' profitable arbitrages, ' + cyclesOnRadar.length + ' arbitrages on the radar\nTop 20 prs: ' + arbCycles.slice(0, 20).map(x => x.pr));
 
 	fs.writeFileSync('./snapshots/' + runId + '.snap', JSON.stringify(arbCycleSnapshots, null, 4));
 }
