@@ -368,7 +368,7 @@ log.info('Bot run: "' + runId + '"');
 function loopSnapshots() {
 	const dontLoadAll = updateStep % updatesPerRediscover !== 0;
 	log.info('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
-	loadExchangesFromFile();
+	// loadExchangesFromFile();
 	lastUpdate = Date.now();
 	getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
 	    updateSnapshots();
@@ -388,10 +388,12 @@ function updateSnapshots() {
 	      cyclesOnRadar = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
 	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.5).sort((x, y) => y.pr - x.pr), // cycles which could become profitable
-	      arbCycles = as.empty(x => x.hash); // cycles which could be currently profitable/which we should snapshot
+	      arbCycles = as.empty(x => x.hash); // cycles which are currently profitable/which we should snapshot
 
 	marketIds = new Set(); // market ids of those to pull
 
+
+	console.log('THIS MANY CYCLES: ' + cyclesOnRadar.length);
 	log.info('\nUpdating snapshots');
 
 	// add all markets which should be on the radar to the set of those to pull, and to arbCycles the profitable cycles to snapshot
@@ -432,8 +434,8 @@ function updateSnapshots() {
 			visit.maxPr = pr;
 
 		// update the worst case prices
-		for (var j = 0; j < snapshot.cycle.length; j++) {
-			const edge = snapshot.cycle[j],
+		for (var j = 0; j < cycle.length; j++) {
+			const edge = cycle[j],
 			      { exchangeId, startIsBase } = edge._m,
 			      symbol = startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s),
 			      priceId = getPriceId(symbol, exchangeId, startIsBase),
@@ -447,7 +449,7 @@ function updateSnapshots() {
 	// finalize the visits which just finished
 	for (var i = 0; i < prevArbCycles.length; i++) {
 		const hash = prevArbCycles[i].hash;
-		if (!arbCycles._elem[hash]) {
+		if (!arbCycles._elem[hash]) { // was profitable and no longer is
 			const snapshot = arbCycleSnapshots._elem[hash],
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
