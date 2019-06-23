@@ -5,6 +5,11 @@ const ccxt = require('ccxt'),
       fs = require('fs'),
       big = require('bignumber.js'),
       sha = require('object-hash'),
+      runId = +Date.now(),
+      log = require('simple-node-logger').createSimpleLogger({
+        logFilePath: './logs/' + runId + '.log',
+        timestampFormat:'YYYY-MM-DD HH:mm:ss.SSS',
+      }),
       keys = JSON.parse(fs.readFileSync('./keys.json', 'utf8')),
       edgeToMarketId = edge => (edge._m.startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s)) + ':' + edge._m.exchangeId,
       getPriceId = (symbol, exchangeId, startIsBase) => symbol + ':' + exchangeId + '|' + (startIsBase ? 'bid' : 'ask'),
@@ -123,7 +128,7 @@ function getArbCoins() {
 function initializeArbMarkets() {
 	const arbCoins = getArbCoins();
 
-	console.log('Arb coins: ' + arbCoins.length);
+	log.info('Arb coins: ' + arbCoins.length);
 
 	for (var i = 0; i < exchanges.length; i++) {
 		const exchange = exchanges[i];
@@ -160,13 +165,13 @@ function getPrices(doMonitor, marketPredicate) {
                     market.bid = bid;
                     market.ask = ask;
                     market.spread = spread;
-			    }, error => console.log(error)));
+			    }, error => log.error(error)));
 		}
 	}
 	if (doMonitor)
 	    monitorRequests();
 
-	console.log('Getting ' + promises.length + ' prices');
+	log.info('Getting ' + promises.length + ' prices');
 
 	return Promise.all(promises);
 }
@@ -174,7 +179,7 @@ function getPrices(doMonitor, marketPredicate) {
 function monitorRequests() {
     var handle = setInterval(() => {
     	if (exchanges.every(e => e.reqQueue.s === 0)) {
-    		console.log('Done with requests');
+    		log.info('Done with requests');
     		return clearInterval(handle);
     	}
 
@@ -345,19 +350,18 @@ function exchangeDataToFile() {
 
 const arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),
       updateTimeStep = 1000 * 60 * 3, // 3 minutes between updates of just interesting markets
-      updatesPerRediscover = 3, // 9 minutes between updating all markets
-      runId = +Date.now();
+      updatesPerRediscover = 3; // 9 minutes between updating all markets
 
 var prevArbCyclesHashes = as.empty(), // hashes of all arb cycles which are currently profitable
     marketIds, // set of the symbol/exchangeId pairs of those needing to be pulled
     lastUpdate, // last time apis were queried
     updateStep = 0;
 
-console.log('Bot run ' + runId);
+log.info('Bot run ' + runId);
 
 function loopSnapshots() {
 	const dontLoadAll = updateStep % updatesPerRediscover !== 0;
-	console.log('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
+	log.info('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
 	// loadExchangesFromFile();
 	lastUpdate = Date.now();
 	getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
@@ -365,14 +369,14 @@ function loopSnapshots() {
 	    const timeTilNext = updateTimeStep + lastUpdate - Date.now();
 	    updateStep++;
 	    setTimeout(loopSnapshots, Math.max(timeTilNext, 1000 * 60));
-	});
+	}).catch(er => log.error(er));
 }
 
-initializeExchanges().then(loopSnapshots);
+initializeExchanges().then(loopSnapshots).catch(er => log.error('Error initializing: ' + er));
 
 function updateSnapshots() {
 
-	const curTime = (new Date()).toLocaleString('en-US'),
+	const curTime = (new Date()).toLocaleString('en-US', { timezone: 'EST', timezoneName: 'short' }),
 	      G = getArbGraph(),
 	      cycles = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: percentReturn(c, 1) };
@@ -381,7 +385,7 @@ function updateSnapshots() {
 
 	marketIds = new Set();
 
-	console.log('\nUpdating snapshots at ' + curTime);
+	log.info('\nUpdating snapshots');
 
 	for (var i = 0; i < cycles.length; i++) {
 		const cycle = cycles[i].cycle;
@@ -449,8 +453,7 @@ function updateSnapshots() {
 
 	prevArbCyclesHashes = newArbCyclesHashes;
 
-	console.log('Good arbitrages: ' + cycles.length);
-	console.log('Top 20 prs: ' + cycles.slice(0, 20).map(x => x.pr));
+	log.info('Good arbitrages: ' + cycles.length + '\nTop 20 prs: ' + cycles.slice(0, 20).map(x => x.pr));
 
 	fs.writeFileSync('./snapshots/' + runId, JSON.stringify(arbCycleSnapshots, null, 4));
 }
