@@ -7,6 +7,7 @@
     "bignumber.js": "^9.0.0",
     "ccxt": "^1.18.726",
     "moment-timezone": "^0.5.25",
+    "mongodb": "^3.2.7",
     "object-hash": "^1.3.1",
     "simple-node-logger": "^18.12.22"
   },
