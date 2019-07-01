@@ -36,3 +36,6 @@ gr.addEdge(G, 'ETH', 'BTC', { market: 'BTX' });
 gr.addEdge(G, 'ETH', 'BTC', { market: 'CEX' });
 
 console.log('3-cycles from BTC: ' + JSON.stringify(gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]), null, 4));
+
+
+require('./Snapshots').takeSnapshots();
