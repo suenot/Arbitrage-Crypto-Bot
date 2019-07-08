@@ -1,6 +1,7 @@
 const as = require('./ArraySet'),
       gr = require('./Graph'),
       ex = require('./Exchanges'),
+      fs = require('fs'),
       sha = require('object-hash'),
       { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
       arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),

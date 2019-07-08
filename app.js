@@ -39,3 +39,5 @@ console.log('3-cycles from BTC: ' + JSON.stringify(gr.getAllNCyclesFromS(G, 3, [
 
 
 require('./Snapshots').takeSnapshots();
+
+
