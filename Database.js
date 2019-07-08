@@ -4,7 +4,7 @@ const assert = require('assert');
 
 const url = 'mongodb://localhost:27017';
 const mongo = require('mongodb').MongoClient;
-const client = new mongo(url, { useNewUrlParser: true});
+const client = new mongo(url, { useNewUrlParser: true });
 const dbName = 'arbyTimes';
 
 
@@ -14,7 +14,6 @@ client.connect((err) => {
     const db = client.db(dbName);
     client.close();
 });
-
 
 
 

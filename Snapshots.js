@@ -1,9 +1,12 @@
 const as = require('./ArraySet'),
+      gr = require('./Graph'),
       ex = require('./Exchanges'),
-      util = require('./Util'),
+      sha = require('object-hash'),
+      { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
       arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),
       updateTimeStep = 1000 * 60 * 3, // 3 minutes between updates of just interesting markets
       updatesPerRediscover = 3, // 9 minutes between updating all markets
+      edgeToMarketId = edge => (edge._m.startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s)) + ':' + edge._m.exchangeId,
       newVisit = curTime => {
       	return { startTime: curTime, maxPr: 0, worstCasePrices: {}, prs: [], totalPr: 0, timeSteps: 0 };
       };
@@ -43,11 +46,11 @@ function loopSnapshots() {
 	log.info('\nLoading ' + (dontLoadAll ? 'interesting' : 'all') + ' market prices...');
 	// loadExchangesFromFile();
 	lastUpdate = Date.now();
-	ex.getPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
+	ex.loadPrices(true, dontLoadAll && ((symbol, exchangeId) => marketIds.has(symbol + ':' + exchangeId))).then(() => {
 	    updateSnapshots();
 	    const timeTilNext = Math.max(updateTimeStep + lastUpdate - Date.now(), 1000 * 60);
 	    updateStep++;
-	    log.info('Waiting ' + util.deltaTString(timeTilNext) + ' before pulling for timestep ' + updateStep + '...');
+	    log.info('Waiting ' + deltaTString(timeTilNext) + ' before pulling for timestep ' + updateStep + '...');
 	    setTimeout(loopSnapshots, timeTilNext);
 	}).catch(err => log.error('Error getting prices: ' + err.stack));
 }
@@ -55,9 +58,9 @@ function loopSnapshots() {
 function updateSnapshots() {
 
 	const curTime = timestamp(),
-	      G = getArbGraph(),
+	      G = ex.getArbGraph(),
 	      cyclesOnRadar = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
-	      	return { cycle: c, pr: percentReturn(c, 1) };
+	      	return { cycle: c, pr: ex.percentReturn(c, 1) };
 	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.5).sort((x, y) => y.pr - x.pr), // cycles which could become profitable
 	      arbCycles = as.empty(x => x.hash); // cycles which are currently profitable/which we should snapshot
 
@@ -106,7 +109,7 @@ function updateSnapshots() {
 			      { exchangeId, startIsBase } = edge._m,
 			      symbol = startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s),
 			      priceId = getPriceId(symbol, exchangeId, startIsBase),
-			      curPrice = exchangeMap[exchangeId].symbolMap[symbol][startIsBase ? 'bid' : 'ask'];
+			      curPrice = ex.getPrice(exchangeId, symbol, startIsBase); // startIsBase ? 'bid' : 'ask'
 
 		    worstCasePrices[priceId] = worstCasePrices[priceId] ? (startIsBase ? Math.min : Math.max)(curPrice, worstCasePrices[priceId]) : curPrice;
 		}
@@ -121,9 +124,9 @@ function updateSnapshots() {
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
 			newestVisit.endTime = curTime;
-			newestVisit.timeProfitable = util.deltaTString(newestVisit.endTime - newestVisit.startTime);
+			newestVisit.timeProfitable = deltaTString(newestVisit.endTime - newestVisit.startTime);
 			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
-			newestVisit.worstCasePr = percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
+			newestVisit.worstCasePr = ex.percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
 			delete newestVisit.totalPr;
 			delete newestVisit.timeSteps;
 			delete newestVisit.worstCasePrices;

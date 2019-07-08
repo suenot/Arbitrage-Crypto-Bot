@@ -5,10 +5,8 @@ const ccxt = require('ccxt'),
       as = require('./ArraySet'),
       big = require('bignumber.js'),
       sha = require('object-hash'),
-      util = require('./Util'),
+      { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
       keys = JSON.parse(fs.readFileSync('./keys.json', 'utf8')),
-      edgeToMarketId = edge => (edge._m.startIsBase ? (edge._s + '/' + edge._e) : (edge._e + '/' + edge._s)) + ':' + edge._m.exchangeId,
-      getPriceId = (symbol, exchangeId, startIsBase) => symbol + ':' + exchangeId + '|' + (startIsBase ? 'bid' : 'ask'),
       mktToCoins = mkt => mkt.includes('/') ? mkt.split('/') : [ mkt ], // market symbol (a slash pair) to coins array
       opts = (args) => {
       	// we have our own rate limiting but theirs can't hurt
@@ -142,7 +140,7 @@ function initializeArbMarkets() {
 // requires exchanges are initialized
 // gets all market prices by default, can be supplied a predicate on symbols and exchangeIds
 // to only pull those passing the predicate
-function getPrices(doMonitor, marketPredicate) {
+function loadPrices(doMonitor, marketPredicate) {
 	const promises = [];
 
 	for (var i = 0; i < exchanges.length; i++) {
@@ -157,7 +155,9 @@ function getPrices(doMonitor, marketPredicate) {
                     const bid = book.bids.length ? book.bids[0][0] : undefined,
                           ask = book.asks.length ? book.asks[0][0] : undefined,
                           spread = (bid && ask) ? ask - bid : undefined;
-    
+
+                    market.bids = book.bids || undefined;
+                    market.asks = book.asks || undefined;
                     market.bid = bid;
                     market.ask = ask;
                     market.spread = spread;
@@ -170,6 +170,10 @@ function getPrices(doMonitor, marketPredicate) {
 	log.info('Getting ' + promises.length + ' prices');
 
 	return Promise.all(promises);
+}
+
+function getPrice(exchangeId, symbol, getBid) {
+	return exchangeMap[exchangeId].symbolMap[symbol][getBid ? 'bid' : 'ask'];
 }
 
 function monitorRequests() {
@@ -300,12 +304,12 @@ function exchangeDataToFile() {
 		      };
 		exchangeCopies.push(copy);
 	}
-	fs.writeFileSync('./priceData/marketPrices' + util.timestamp() + '.json', JSON.stringify(exchangeCopies));
+	fs.writeFileSync('./priceData/marketPrices' + timestamp() + '.json', JSON.stringify(exchangeCopies));
 }
 
-module.exports = { initializeExchanges, getPrices, percentReturn, getPrices, loadExchangesFromFile, exchangeDataToFile };
+module.exports = { initializeExchanges, loadPrices, getPrice, percentReturn, getArbGraph, loadExchangesFromFile, exchangeDataToFile };
 
-// initializeExchanges().then(() => getPrices(true).then(()  => {
+// initializeExchanges().then(() => loadPrices(true).then(()  => {
 // 	exchangeDataToFile();
 
 // 	const G = getArbGraph(),
