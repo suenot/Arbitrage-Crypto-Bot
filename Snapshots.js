@@ -83,7 +83,7 @@ function updateSnapshots() {
 	// update the snapshots with the current price data
 	for (var i = 0; i < arbCycles.length; i++) {
 		const { hash, cycle, pr } = arbCycles[i],
-		      snapshot = arbCycleSnapshots._elem[hash] || {
+		      snapshot = as.get(arbCycleSnapshots, hash) || {
 		      	cycle,
 		      	visits:[ newVisit(curTime) ]
 		      },
@@ -120,8 +120,8 @@ function updateSnapshots() {
 	// finalize the visits which just finished
 	for (var i = 0; i < prevArbCycles.length; i++) {
 		const hash = prevArbCycles[i].hash;
-		if (!arbCycles._elem[hash]) { // was profitable and no longer is
-			const snapshot = arbCycleSnapshots._elem[hash],
+		if (!as.get(arbCycles, hash)) { // was profitable and no longer is
+			const snapshot = as.get(arbCycleSnapshots, hash),
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
 			newestVisit.endTime = curTime;

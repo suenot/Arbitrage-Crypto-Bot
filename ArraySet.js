@@ -7,13 +7,13 @@ const sha = require('object-hash');
   // so if a custom hash is
 function empty(hash)  {
 	const arr = [];
-	arr._elem = hash ? {} : new Set(); // set (of elements)
+	arr._elem = hash ? new Map() : new Set(); // set (of elements)
 	arr._hash = hash || undefined; // custom hash function
 	return arr;
 }
 
 function has(as, elem) {
-	return as._hash ? !!as._elem[as._hash(elem)] : as._elem.has(sha(elem));
+	return as._elem.has(sha(elem));
 }
 
 function add() {
@@ -30,11 +30,11 @@ function add() {
 function _add(as, elem) {
 	const hash = (as._hash || sha)(elem);
 
-	if (as._hash ? as._elem[hash] : as._elem.has(hash)) // redundant element
+	if (as._elem.has(hash)) // redundant element
 		return;
 
 	if (as._hash) // custom hash function, _elem is a map
-		as._elem[hash] = elem;
+		as._elem.set(hash, elem);
 	else // no custom hash function, _elem is a set
 		as._elem.add(hash);
 
@@ -43,7 +43,7 @@ function _add(as, elem) {
 
 function get(as, elem) {
 	if (as._hash)
-		return as._elem[as._hash(elem)] || undefined;
+		return as._elem.get(elem) || as._elem.get(as._hash(elem)) || undefined; // first assume hash was passed, then element if that doesn't work
 	else
 		return has(as, elem) ? elem : undefined;
 }
