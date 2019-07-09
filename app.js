@@ -65,6 +65,6 @@ console.log('bittrex holdings (2.5 BTC, 3 ETH): ' + JSON.stringify(wt.getHolding
 console.log('binace holdings (1 BTC): ' + JSON.stringify(wt.getHoldingsInExchange(wallet, 'binance'), null, 4));
 
 
-// require('./Snapshots').takeSnapshots();
+require('./Snapshots').takeSnapshots();
 
 
