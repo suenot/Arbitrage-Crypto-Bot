@@ -43,7 +43,7 @@ function _add(as, elem) {
 
 function get(as, elem) {
 	if (as._hash)
-		return as._elem.get(elem) || as._elem.get(as._hash(elem)) || undefined; // first assume hash was passed, then element if that doesn't work
+		return as._elem.get(elem) || undefined; // if custom hash provided, assume hash was passed
 	else
 		return has(as, elem) ? elem : undefined;
 }
