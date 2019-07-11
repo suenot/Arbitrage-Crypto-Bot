@@ -12,7 +12,7 @@ const moment = require('moment-timezone'),
       
         this.deltaTString = function () {
           	const deltaT = arguments.length <= 1 ? moment.duration(arguments[0]) : moment.duration(moment(arguments[0], timeFormat).tz(timezone).diff(moment(arguments[1], timeFormat).tz(timezone))),
-          	      days =  deltaT.days(), // hours*minutes*seconds*milliseconds
+          	      days =  deltaT.days(),
           	      hours = deltaT.hours(),
           	      min = deltaT.minutes();
           	return (days === 0 ? '' : days + (days === 1 ? ' day ' : ' days ')) + (hours === 0 ? '' : hours + (hours === 1 ? ' hour ' : ' hours ')) + min + (min === 1 ? ' min' : ' mins');

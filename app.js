@@ -1,4 +1,5 @@
 const gr = require('./Graph'),
+      util = require('./Util'),
       wt = require('./Wallet');
 
 
@@ -66,5 +67,11 @@ console.log('binace holdings (1 BTC): ' + JSON.stringify(wt.getHoldingsInExchang
 
 
 require('./Snapshots').takeSnapshots();
+
+
+var curTime = util.timestamp(),
+    otherTime = "July 10th 19, 1:00:18 am";
+
+console.log('Delta T: ' + util.deltaTString(curTime, otherTime));
 
 

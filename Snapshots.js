@@ -60,7 +60,7 @@ function updateSnapshots() {
 
 	const curTime = timestamp(),
 	      G = ex.getArbGraph(),
-	      cyclesOnRadar = gr.getAllNCyclesFromS(G, 3, [ 'BTC' ]).map(c => {
+	      cyclesOnRadar = gr.getAllNCyclesFromS(G, 2, [ 'BTC' ]).map(c => {
 	      	return { cycle: c, pr: ex.percentReturn(c, 1) };
 	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.5).sort((x, y) => y.pr - x.pr), // cycles which could become profitable
 	      arbCycles = as.empty(x => x.hash); // cycles which are currently profitable/which we should snapshot
@@ -125,7 +125,7 @@ function updateSnapshots() {
 			      newestVisit = snapshot.visits[snapshot.visits.length - 1]; // the visit which just ended
 
 			newestVisit.endTime = curTime;
-			newestVisit.timeProfitable = deltaTString(newestVisit.endTime - newestVisit.startTime);
+			newestVisit.timeProfitable = deltaTString(newestVisit.endTime, newestVisit.startTime);
 			newestVisit.avgPr = newestVisit.totalPr / newestVisit.timeSteps;
 			newestVisit.worstCasePr = ex.percentReturn(snapshot.cycle, 1, newestVisit.worstCasePrices);
 			delete newestVisit.totalPr;
