@@ -7,6 +7,19 @@ function empty() {
 	};
 }
 
+// requires wallet has pebble, private method
+function removeHolding(wallet, pebble) {
+	const { exchangeId, coin, amount, pebbleId } = pebble,
+	      holdingsInCoin = getHoldingsInCoin(wallet, pebble.coin),
+	      holdingsInExchange = getHoldingsInCoin(wallet, pebble.exchangeId);
+
+	holdingsInCoin.amount -= amount;
+	holdingsInExchange.amount -= amount;
+
+	as.remove(holdingsInCoin.pebbles, pebbleId);
+	as.remove(holdingsInExchange.pebbles, pebbleId);
+}
+
 function addHolding(wallet, pebble) {
 
 	const { exchangeId, coin, amount, pebbleId } = pebble;
@@ -25,7 +38,7 @@ function addHolding(wallet, pebble) {
 		lookup.totalAmount += amount;
 	    as.add(lookup.pebbles, pebble);
 	} else {
-		const pebbles = as.empty(pebble => pebble.pebbleId),
+		const pebbles = as.empty(pebble => pebbleId),
 		      holding = { coin, exchangeId, amount, pebbles };
 
 		as.add(pebbles, pebble);
@@ -35,9 +48,25 @@ function addHolding(wallet, pebble) {
 	}
 }
 
-// requires pebble is real
-function tradePebble(wallet, pebble, endCoin) {
+// requires pebble is in wallet
+// has side effect of actually changing passed in pebble
+function tradePebble(wallet, pebble, endCoin, endCoinPerStartCoin) {
+	removeHolding(wallet, pebble);
 
+	pebble.coin = endCoin;
+	pebble.amount *= endCoinPerStartCoin;
+
+	addHolding(wallet, pebble);
+}
+
+// requires pebble is in wallet
+function transferPebble(wallet, pebble, transferFee, endExchangeId) {
+	removeHolding(wallet, pebble);
+
+	pebble.exchangeId = endExchangeId;
+	pebble.amount -= fee;
+
+	addHolding(wallet, pebble);
 }
 
 
@@ -49,4 +78,4 @@ function getHoldingsInExchange(wallet, exchangeId) {
 	return wallet.exchangeMap.get(exchangeId) || as.empty(holding => holding.coin);
 }
 
-module.exports = { empty, addHolding, getHoldingsInExchange, getHoldingsInCoin };
+module.exports = { empty, addHolding, tradePebble, transferPebble, getHoldingsInExchange, getHoldingsInCoin };
