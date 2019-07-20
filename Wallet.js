@@ -7,7 +7,9 @@ function empty() {
 	};
 }
 
-function addHolding(wallet, exchangeId, coin, amount) {
+function addHolding(wallet, pebble) {
+
+	const { exchangeId, coin, amount, pebbleId } = pebble;
 
 	if (!wallet.coinMap.has(coin))
 		wallet.coinMap.set(coin, as.empty(holding => holding.exchangeId)); // each coin has an ArraySet indexed by exchange where its holdings are stored
@@ -19,14 +21,23 @@ function addHolding(wallet, exchangeId, coin, amount) {
 	      exchangeArray = wallet.exchangeMap.get(exchangeId),
 	      lookup = as.get(coinArray, exchangeId); // lookup in ArraySet for given coin by exchange (equivalent to as.get(exchangeArray, coin) because these have same elements)
 
-	if (lookup)
-		lookup.amount += amount;
-	else {
-		const holding = { coin, exchangeId, amount };
+	if (lookup) {
+		lookup.totalAmount += amount;
+	    as.add(lookup.pebbles, pebble);
+	} else {
+		const pebbles = as.empty(pebble => pebble.pebbleId),
+		      holding = { coin, exchangeId, amount, pebbles };
+
+		as.add(pebbles, pebble);
 
 		as.add(exchangeArray, holding);
 		as.add(coinArray, holding);
 	}
+}
+
+// requires pebble is real
+function tradePebble(wallet, pebble, endCoin) {
+
 }
 
 

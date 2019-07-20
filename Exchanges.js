@@ -1,8 +1,10 @@
 const ccxt = require('ccxt'),
+      clone = require('clone'),
       gr = require('./Graph'),
       ll = require('./LinkedList'),
       fs = require('fs'),
       as = require('./ArraySet'),
+      wt = require('./Wallet'),
       big = require('bignumber.js'),
       sha = require('object-hash'),
       { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
@@ -253,6 +255,7 @@ function percentReturn(A, c, priceOverrides) {
 }
 
 // requires exchanges initialized
+// returns graph where nodes are just coins
 function getArbGraph() {
 	const G = gr.newGraph();
 
@@ -271,6 +274,39 @@ function getArbGraph() {
 	}
 
 	return G;
+}
+
+// given an arb cycle and a wallet state, return all reasonable paths of execution
+function getAllExecutions(cycle, wallet) {
+	return getAllExecutionsHelper(cycle, wallet, []);
+}
+
+function getAllExecutionsHelper(cycle, tradeEdgeIndex, wallet, paths, remainingTransfers, newPath) {
+
+	const edge = cycle[i],
+	      start = edge._s,
+	      end = edge._e,
+	      { exchangeId, startIsBase } = trade._m,
+	      coinHoldings = wt.getHoldingsInCoin(start),
+	      exchangeHoldings = wt.getHoldingsInExchange(trade._m.exchangeId),
+	      holdingsInStart = exchangeHoldings.filter(holding => holding.coin === start),
+	      curPath = paths[paths.length - 1];
+
+	// check if the coin is immediately available on given exchange
+	// in this case, the only option is to take the trade
+	if (holdingsInStart.length > 0) {
+		curPath.push(edge);
+
+	} else { // consider taking fastest transfer from coin holdings, or best trade on 
+		if (remainingTransfers > 0 && coinHoldings.length > 0) {
+			// for (var j = 0; j < 
+		}
+
+		if (exchangeHoldings.length > 0) {
+
+		}
+	}
+
 }
 
 // requires exchanges are initialized
