@@ -1,3 +1,7 @@
+var exchanges, // array of exchange objects
+    exchangeMap = {}, // map from exchange ids to objects in the above exchanges array
+    arbGraph;
+
 const ccxt = require('ccxt'),
       clone = require('clone'),
       gr = require('./Graph'),
@@ -9,6 +13,18 @@ const ccxt = require('ccxt'),
       sha = require('object-hash'),
       { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
       keys = JSON.parse(fs.readFileSync('./keys.json', 'utf8')),
+      withdrawalFee = (exchangeId, coin) => exchangeMap[exchangeId].xt.currencies[coin].fee || 0,
+      			/*
+
+			THIS AINT IT CHIEF (|| 0)
+
+
+            if (withdrawalFee === undefined)
+				console.log('Exchange ' + edge._m + ' withdrawal fee undefined on ' + base);
+
+
+
+			*/
       mktToCoins = mkt => mkt.includes('/') ? mkt.split('/') : [ mkt ], // market symbol (a slash pair) to coins array
       opts = (args) => {
       	// we have our own rate limiting but theirs can't hurt
@@ -19,10 +35,6 @@ const ccxt = require('ccxt'),
       };
 
 big.set({ DECIMAL_PLACES: 20 });
-
-var exchanges, // array of exchange objects
-    exchangeMap = {}, // map from exchange ids to objects in the above exchanges array
-    arbGraph;
 
 function initializeExchanges() {
 	const exchangeIds = Object.keys(keys),
@@ -242,19 +254,8 @@ function percentReturn(A, c, priceOverrides) {
 
 		// if there's another edge to follow on a different exchange, factor in the cost of doing so
 		if (i !== A.length - 1 && A[i + 1]._m.exchangeId !== exchangeId) {
-			const withdrawalFee = exchange.xt.currencies[end].fee;
+			const withdrawalFee = withdrawalFee(edge._m.exchangeId, edge._e);
 			
-			/*
-
-			THIS AINT IT CHIEF
-
-
-            if (withdrawalFee === undefined)
-				console.log('Exchange ' + edge._m + ' withdrawal fee undefined on ' + base);
-
-
-
-			*/
 			currentStartHolding = currentStartHolding.minus(+(withdrawalFee || 0));
 		}
 	}
@@ -287,54 +288,71 @@ function getArbGraph() {
 // given an arb cycle and a wallet state, return all reasonable paths of execution
 // requires all trades in arb cycle can be taken
 function getAllExecutions(cycle, wallet) {
-	const executions = [],
-	      cycle = cycle.map(edge => {
-	      	const newEdge = clone(edge);
-	      	newEdge._m.isTrade = true;
-	      	return newEdge;
-	      });
+	const executions = [];
 
-	getAllExecutionsHelper(cycle, wallet, executions, [[]], 1); // currently allow for up to 1 transfer, later a time will be supplied
+	// wallet cloned because its pebbles will be mutated
+	getAllExecutionsHelper(cycle, clone(wallet), [], executions, 1); // currently allow for up to 1 transfer, later a time will be supplied
 	return executions;
 }
 
 
 function getAllExecutionsHelper(cycle, tradeEdgeIndex, wallet, executions, curExecution, remainingTransfers) {
 
-	const edge = cycle[tradeEdgeIndex],
-	      startCoin = edge._s,
-	      endCoin = edge._e,
-	      { exchangeId } = edge._m,
-	      coinHoldings = wt.getHoldingsInCoin(startCoin),
-	      exchangeHoldings = wt.getHoldingsInExchange(exchangeId),
-	      holdingInStartOnExchange = exchangeHoldings.find(holding => holding.coin === startCoin), // can only be one holding in start on exchange (but multiple pebbles!)
-	      curPath = curExecution[curExecution.length - 1];
+	const untouchedPebbles = holdings => holdings.map(holding => holding.pebbles.filter(pebble => pebble.pathIndex === undefined)).flat(), // get pebbles from a list of holdings which weren't used in the execution
+	      copyExecution = execution => execution.map(path => path.slice()),
+	      edge = cycle[tradeEdgeIndex],
+	      tradeStartCoin = edge._s,
+	      tradeEndCoin = edge._e,
+	      tradeExchangeId = edge._m.exchangeId,
+	      startCoinHoldings = wt.getHoldingsInCoin(tradeStartCoin),
+	      exchangeHoldings = wt.getHoldingsInExchange(tradeExchangeId),
+	      holdingInStartOnExchange = exchangeHoldings.find(holding => holding.coin === tradeStartCoin); // can only be one holding in start on exchange (but multiple pebbles!)
 
 	// check if the coin is immediately available on given exchange
 	// in this case, the only option is to take the trade
-	if (holdingsInStart.length > 0) {
+	if (holdingsInStartOnExchange !== undefined) {
 
 		const endPerStart = endPerStart(edge),
 		      newWallet = clone(wallet),
-			  newPath = curPath.slice(); // copy path (no need to clone, we can share the pointers to the trade edges, these won't be mutated later)
+		      tradePebbleUntouchedCandidates = untouchedPebbles([ holdingInStartOnExchange ]),
+		      // currently just chooses any untouched pebble, then touched pebble (candidates are same exchange and same coin so times don't matter here), fair only if every pebble is juicy, will need logic to merge dead pebbles
+		      tradePebbleId = (tradePebbleUntouchedCandidates.length > 0 ? tradePebbleUntouchedCandidates[0] : holdingInStartOnExchange.pebbles[0]).pebbleId,
+		      tradePebble = wt.getPebble(newWallet, tradePebbleId),
+		      newExecution = copyExecution(curExecution),
+		      newPathIndex = tradePebble.pathIndex || (newExecution.push([]) - 1),
+		      newPath = newExecution[newPathIndex];
 
-		newPath.push(edge);
+		tradePebble.pathIndex = newPathIndex;
 
-		// currently just chooses any pebble, fair only if every pebble is juicy, will need logic to merge dead pebbles
-		wt.tradePebble(newWallet, holdingInStartOnExchange.pebbles[0], endCoin, endPerStart);
+		newPath.push({ _s: tradeStartCoin, _e: tradeEndCoin, exchangeId: tradeExchangeId, isTrade: true, pebbleId: tradePebbleId });
+
+		wt.tradePebble(newWallet, tradePebble, tradeEndCoin, endPerStart);
 
 		getAllExecutionsHelper(cycle, tradeEdgeIndex + 1, newWallet, paths, newPath, remainingTransfers);
 
 	} else { // consider taking fastest transfer from coin holdings, or best trade on exchange
 
-		if (remainingTransfers > 0 && coinHoldings.length > 0) { // if you choose to transfer
+		if (remainingTransfers > 0 && startCoinHoldings.length > 0) { // if you choose to transfer
 			const newWallet = clone(wallet),
-			      newPath = curPath.slice(),
-			      transerPebble = coinHoldings[0].pebbles[0]; // currently takes any holding in coin first pebble, should take transfer on fastest exchange in coin holdings, and need invariant that every pebble is juicy
+			      transerPebbleUntouchedCandidates = untouchedPebbles(startCoinHoldings),
+			      // currently takes any pebble which is not already used in a different path of the current execution
+			      // otherwise takes anything, should eventually take:
+			      //  the fastest of the untouched (unless another exchange is so much faster that you're better off with a dependency??)
+			      //  otherwise should take transfer on fastest exchange in coin holdings, and gonna need invariant that every pebble is juicy so the pebble chosen from pebbles doesn't matter
+			      transferPebbleId = (transerPebbleUntouchedCandidates.length > 0 ? transerPebbleUntouchedCandidates[0] : coinHoldings[0].pebbles[0]).pebbleId,
+			      transferPebble = wt.getPebble(newWallet, transferPebbleId), // need pebble from new wallet because it will be mutated with pathIndex
+			      transferStartExchangeId = transferPebble.exchangeId,
+			      newExecution = copyExecution(curExecution), // can copy just paths without deep copying trades and transfers
+			      newPathIndex = transerPebble.pathIndex || (newExecution.push([]) - 1), // either take dependent path or create new one
+			      newPath = newExecution[newPathIndex];
 
-			newPath.push({ _s: tradePebble.exchangeId, _e: exchangeId, _m: { isTrade: false }});
+			transferPebble.pathIndex = newPathIndex;
+
+			newPath.push({ _s: transferStartExchangeId, _e: tradeExchangeId, coin: tradeStartCoin, isTrade: false, pebbleId: transferPebbleId });
 			// currently just takes any transfer, eventually will take fastest
+			wt.transerPebble(newWallet, transerPebble, tradeExchangeId, withdrawalFee(transferStartExchangeId, tradeStartCoin));
 
+			getAllExecutionsHelper(cycle, tradeEdgeIndex, newWallet, executions, newExecution, remainingTransfers - 1);
 		}
 
 		if (exchangeHoldings.length > 0) {

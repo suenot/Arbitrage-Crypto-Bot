@@ -12,8 +12,8 @@ function empty(hash)  {
   return arr;
 }
 
-function has(as, elem) {
-  return as._elem.has(sha(elem));
+function has(as, elemOrHash) {
+  return as._elem.has(as._hash ? elemOrHash : sha(elemOrHash));
 }
 
 function add() {

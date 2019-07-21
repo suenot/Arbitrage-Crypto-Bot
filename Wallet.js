@@ -9,7 +9,8 @@ const as = require('./ArraySet');
 function empty() {
 	return {
 		coinMap: new Map(),
-		exchangeMap: new Map()
+		exchangeMap: new Map(),
+		pebbleIdMap: new Map()
 	};
 }
 
@@ -22,6 +23,8 @@ function removePebble(wallet, pebble) {
 	holding.amount = holding.amount.minus(amount);
 
 	as.remove(holding.pebbles, pebbleId);
+	wallet.pebbleIdMap.delete(pebbleId);
+
 
 	if (holding.pebbles.length === 0) { // last pebble for this coin/exchangeId pair
 		as.remove(holdingsInCoin, exchangeId);
@@ -33,6 +36,8 @@ function removePebble(wallet, pebble) {
 function addPebble(wallet, pebble) {
 
 	const { exchangeId, coin, amount, pebbleId } = pebble;
+
+	wallet.pebbleIdMap.set(pebbleId, pebble);
 
 	if (!wallet.coinMap.has(coin))
 		wallet.coinMap.set(coin, as.empty(holding => holding.exchangeId)); // each coin has an ArraySet indexed by exchange where its holdings (pebbles + metadata) are stored
@@ -72,6 +77,7 @@ function tradePebble(wallet, pebble, endCoin, endCoinPerStartCoin) {
 }
 
 // requires pebble is in wallet
+// has side effect of actually changing passed in pebble
 function transferPebble(wallet, pebble, endExchangeId, transferFee) {
 	removePebble(wallet, pebble);
 
@@ -93,4 +99,8 @@ function getHoldingsInExchange(wallet, exchangeId) {
 	return wallet.exchangeMap.get(exchangeId) || as.empty(holding => holding.coin);
 }
 
-module.exports = { empty, addPebble, tradePebble, transferPebble, getHoldingsInExchange, getHoldingsInCoin };
+function getPebble(wallet, pebbleId) {
+	return wallet.pebbleIdMap.get(pebbleId);
+}
+
+module.exports = { empty, addPebble, tradePebble, transferPebble, getPebble, getHoldingsInExchange, getHoldingsInCoin };

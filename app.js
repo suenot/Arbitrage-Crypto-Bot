@@ -3,6 +3,7 @@ const gr = require('./Graph'),
       wt = require('./Wallet'),
       uuid = require('uuid/v4'),
       clone = require('clone'),
+      as = require('./ArraySet'),
       big = require('bignumber.js');
 
 
