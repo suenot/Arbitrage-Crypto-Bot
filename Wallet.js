@@ -19,7 +19,7 @@ function removePebble(wallet, pebble) {
 	      holdingsInCoin = getHoldingsInCoin(wallet, coin), // could have lookup up by exchange too
 	      holding = as.get(holdingsInCoin, exchangeId);
 
-	holding.amount -= amount;
+	holding.amount = holding.amount.minus(amount);
 
 	as.remove(holding.pebbles, pebbleId);
 
@@ -45,7 +45,7 @@ function addPebble(wallet, pebble) {
 	      lookup = as.get(coinArray, exchangeId); // lookup in ArraySet for given coin by exchange (equivalent to as.get(exchangeArray, coin) because these have same elements)
 
 	if (lookup) {
-		lookup.amount += amount;
+		lookup.amount = lookup.amount.plus(amount);
 
 	    as.add(lookup.pebbles, pebble);
 	} else {
@@ -66,7 +66,7 @@ function tradePebble(wallet, pebble, endCoin, endCoinPerStartCoin) {
 	removePebble(wallet, pebble);
 
 	pebble.coin = endCoin;
-	pebble.amount *= endCoinPerStartCoin;
+	pebble.amount = pebble.amount.times(endCoinPerStartCoin);
 
 	addPebble(wallet, pebble);
 }

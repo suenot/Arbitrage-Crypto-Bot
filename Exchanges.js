@@ -193,6 +193,28 @@ function monitorRequests() {
     }, 1000);
 }
 
+// given trade edge from start to end on some exchange (and optional price overrides)
+// get the constant you multiply some amount of start by to get the amount of end the trade would give
+// returns a big, not a number, unless there's no market price, then undefined is returned
+function endPerStart(edge, priceOverrides) {
+    const metadata = edge._m,
+    	  start = edge._s,
+    	  end = edge._e,
+    	  { exchangeId, startIsBase } = metadata, // if start is base you're a seller, so you accept bid price
+    	  base = startIsBase ? start : end,
+    	  quote = startIsBase ? end : start,
+    	  symbol = base + '/' + quote,
+    	  exchange = exchangeMap[exchangeId],
+    	  market = exchange.xt.markets[symbol],
+    	  percentTradeFee = Math.max(market.taker, market.maker),
+    	  priceOverride = priceOverrides && priceOverrides[getPriceId(symbol, exchangeId, startIsBase)],
+    	  marketPrice = new big(priceOverride || exchange.symbolMap[symbol][startIsBase ? 'bid' : 'ask']),
+    	  endPerStartNoFees = startIsBase ? marketPrice : (new big(1)).dividedBy(marketPrice),
+    	  endPerStart = endPerStartNoFees.times(1 - percentTradeFee);
+
+    return marketPrice.isNaN() ? undefined : endPerStart;
+}
+
 // requires exchanges are initialized
 // given an arbitrage cycle A originating at coin b1, compute how much profit would be made if c units of q1 were arbitraged
 // price overrides allows an override of the current prices via a map from prices ids (symbol, exchange, bid/ask) to prices
@@ -203,25 +225,11 @@ function percentReturn(A, c, priceOverrides) {
 	for (var i = 0; i < A.length; i++) {
 
 		const edge = A[i],
-		      metadata = edge._m,
-		      start = edge._s,
-		      end = edge._e,
-		      { exchangeId, startIsBase } = metadata, // if start is base you're a seller, so you accept bid price
-		      base = startIsBase ? start : end,
-		      quote = startIsBase ? end : start,
-		      symbol = base + '/' + quote,
-		      exchange = exchangeMap[exchangeId],
-		      market = exchange.xt.markets[symbol],
-		      percentTradeFee = Math.max(market.taker, market.maker),
-		      priceOverride = priceOverrides && priceOverrides[getPriceId(symbol, exchangeId, startIsBase)],
-		      marketPrice = new big(priceOverride || exchange.symbolMap[symbol][startIsBase ? 'bid' : 'ask']),
-		      endPerStart = startIsBase ? marketPrice : (new big(1)).dividedBy(marketPrice),
-		      endNoFees = endPerStart.times(currentStartHolding),
-		      endWithFees = endNoFees.times(1 - percentTradeFee);
+		      endWithFees = endPerStart(edge, priceOverrides).times(currentStartHolding);
 
-		if (marketPrice.isNaN())
+		if (endWithFees === undefined)
 			return 'Missing market price';
-
+		     
 		// console.log(exchange.id, exchange.symbolMap[symbol]);
 		// console.log('\ncurrent start holding: ' + currentStartHolding);
 		// console.log('percent trade fee: ' + percentTradeFee);
@@ -277,29 +285,56 @@ function getArbGraph() {
 }
 
 // given an arb cycle and a wallet state, return all reasonable paths of execution
+// requires all trades in arb cycle can be taken
 function getAllExecutions(cycle, wallet) {
-	return getAllExecutionsHelper(cycle, wallet, []);
+	const executions = [],
+	      cycle = cycle.map(edge => {
+	      	const newEdge = clone(edge);
+	      	newEdge._m.isTrade = true;
+	      	return newEdge;
+	      });
+
+	getAllExecutionsHelper(cycle, wallet, executions, [[]], 1); // currently allow for up to 1 transfer, later a time will be supplied
+	return executions;
 }
 
-function getAllExecutionsHelper(cycle, tradeEdgeIndex, wallet, paths, remainingTransfers, newPath) {
 
-	const edge = cycle[i],
-	      start = edge._s,
-	      end = edge._e,
-	      { exchangeId, startIsBase } = trade._m,
-	      coinHoldings = wt.getHoldingsInCoin(start),
-	      exchangeHoldings = wt.getHoldingsInExchange(trade._m.exchangeId),
-	      holdingsInStart = exchangeHoldings.filter(holding => holding.coin === start),
-	      curPath = paths[paths.length - 1];
+function getAllExecutionsHelper(cycle, tradeEdgeIndex, wallet, executions, curExecution, remainingTransfers) {
+
+	const edge = cycle[tradeEdgeIndex],
+	      startCoin = edge._s,
+	      endCoin = edge._e,
+	      { exchangeId } = edge._m,
+	      coinHoldings = wt.getHoldingsInCoin(startCoin),
+	      exchangeHoldings = wt.getHoldingsInExchange(exchangeId),
+	      holdingInStartOnExchange = exchangeHoldings.find(holding => holding.coin === startCoin), // can only be one holding in start on exchange (but multiple pebbles!)
+	      curPath = curExecution[curExecution.length - 1];
 
 	// check if the coin is immediately available on given exchange
 	// in this case, the only option is to take the trade
 	if (holdingsInStart.length > 0) {
-		curPath.push(edge);
 
-	} else { // consider taking fastest transfer from coin holdings, or best trade on 
-		if (remainingTransfers > 0 && coinHoldings.length > 0) {
-			// for (var j = 0; j < 
+		const endPerStart = endPerStart(edge),
+		      newWallet = clone(wallet),
+			  newPath = curPath.slice(); // copy path (no need to clone, we can share the pointers to the trade edges, these won't be mutated later)
+
+		newPath.push(edge);
+
+		// currently just chooses any pebble, fair only if every pebble is juicy, will need logic to merge dead pebbles
+		wt.tradePebble(newWallet, holdingInStartOnExchange.pebbles[0], endCoin, endPerStart);
+
+		getAllExecutionsHelper(cycle, tradeEdgeIndex + 1, newWallet, paths, newPath, remainingTransfers);
+
+	} else { // consider taking fastest transfer from coin holdings, or best trade on exchange
+
+		if (remainingTransfers > 0 && coinHoldings.length > 0) { // if you choose to transfer
+			const newWallet = clone(wallet),
+			      newPath = curPath.slice(),
+			      transerPebble = coinHoldings[0].pebbles[0]; // currently takes any holding in coin first pebble, should take transfer on fastest exchange in coin holdings, and need invariant that every pebble is juicy
+
+			newPath.push({ _s: tradePebble.exchangeId, _e: exchangeId, _m: { isTrade: false }});
+			// currently just takes any transfer, eventually will take fastest
+
 		}
 
 		if (exchangeHoldings.length > 0) {
