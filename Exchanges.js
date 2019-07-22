@@ -256,7 +256,7 @@ function percentReturn(A, c, priceOverrides) {
 		if (i !== A.length - 1 && A[i + 1]._m.exchangeId !== exchangeId) {
 			const withdrawalFee = withdrawalFee(edge._m.exchangeId, edge._e);
 			
-			currentStartHolding = currentStartHolding.minus(+(withdrawalFee || 0));
+			currentStartHolding = currentStartHolding.minus(withdrawalFee);
 		}
 	}
 
