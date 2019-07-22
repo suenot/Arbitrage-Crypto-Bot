@@ -4,7 +4,8 @@ const gr = require('./Graph'),
       uuid = require('uuid/v4'),
       clone = require('clone'),
       as = require('./ArraySet'),
-      big = require('bignumber.js');
+      big = require('bignumber.js'),
+      cap = require('./CoinMarketCap');
 
 
 var G = gr.newGraph();
@@ -121,12 +122,60 @@ console.log('ETH holdings (3 bittrex, 0.8 binance): ' + JSON.stringify(wt.getHol
 console.log('bittrex holdings (3 eth): ' + JSON.stringify(wt.getHoldingsInExchange(wallet, 'bittrex'), null, 4));
 console.log('binace holdings (3 LTC, 1.9 BTC, 0.8 ETH): ' + JSON.stringify(wt.getHoldingsInExchange(wallet, 'binance'), null, 4));
 
-require('./Snapshots').takeSnapshots();
+var coins = [ 'BTC', 'ETH', 'GTO', 'ETC', 'LTC', 'GNT', 'DOGE' ],
+      promises = [];
+
+// test to see that batchsize requests send immediately regardless of delay
+// console.log('Sending 5 requests at ' + Date.now());
+// // should see 5 coins all send immediately
+// for (var i = 0; i < 5; i++)
+// 	promises.push(cap.dollarValue(coins[i], 0, 100000));
+
+// Promise.all(promises).then(prices => console.log(`Got prices ${prices} at ${Date.now()}`));
+
+// test to see that batchsize - 1 requests take max time
+// promises = [];
+// console.log('Submitting 4 requests at ' + Date.now());
+// for (var i = 0; i < 4; i++)
+// 	promises.push(cap.dollarValue(coins[i], 0, 3000));
+
+// Promise.all(promises).then(prices => console.log(`Got prices ${prices} at ${Date.now()}`));
+
+// test to see that a request for the same coin will be snuck in if it comes after the relevant request is sent
+// promises = [];
+// console.log('Sending 2 requests at ' + Date.now());
+// for (var i = 0; i < 2; i++)
+// 	promises.push(cap.dollarValue(coins[i], 0, 3000));
+
+// promises.push(new Promise((res, err) => {
+// 	Promise.all(promises).then(prices => console.log(`Got prices ${prices} at ${Date.now()}`));
+// 	setTimeout(() => res(cap.dollarValue(coins[0], 0, 1000000)), 3001);
+// }));
+
+// test to see that requesting something in the future with outdatedness within range of last request is resolved immediately
+// console.log('Sending request at ' + Date.now());
+// cap.dollarValue(coins[0], 0, 0);
+// setTimeout(() => cap.dollarValue(coins[0], 1000, 1000000).then(usd => console.log(`Got price ${usd} at ${Date.now()}`)), 900);
+
+// test to see that requesting something in the future with outdatedness out of range of last request takes a while
+// console.log('Sending request at ' + Date.now());
+// cap.dollarValue(coins[0], 0, 0);
+// setTimeout(() => cap.dollarValue(coins[0], 1000, 5000).then(usd => console.log(`Got price ${usd} at ${Date.now()}`)), 1100);
+
+// test to see that hitting cutoff on some requests only fills in enough to round up to nearest batch size
+// for (var i = 0; i < 6; i++)
+// 	cap.dollarValue(coins[i], 0, i < 3 ? 3000 : 10000).then(console.log);
+
+// test to see that hitting cutoff on some requests fills all of the remaining onces (all will hit after 1000)
+// for (var i = 0; i < 4; i++)
+// 	cap.dollarValue(coins[i], 0, i < 3 ? 3000 : 10000).then(console.log);
 
 
-var curTime = util.timestamp(),
-    otherTime = "July 10th 19, 1:00:18 am";
+// require('./Snapshots').takeSnapshots();
 
-console.log('Delta T: ' + util.deltaTString(curTime, otherTime));
+// var curTime = util.timestamp(),
+//     otherTime = "July 10th 19, 1:00:18 am";
+
+// console.log('Delta T: ' + util.deltaTString(curTime, otherTime));
 
 
