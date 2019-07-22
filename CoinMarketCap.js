@@ -2,43 +2,59 @@ const apiKey = "4ee5956e-ef0a-49bd-910f-3aa5b75e4241",
       { performance } = require('perf_hooks'),
       rp = require('request-promise'),
       rateLimit = 288000,
-      lastCryptoQuotesCall = 0,
       cryptoQuotesDataCache = new Map(), // cache of all interesting data from the crypto quotes endpoint and the time it was recieved
       cryptoQuotesRequestBacklog = new Map(), // backlog of requests for the cryptocurrency quotes endpoint
+      getCryptoQuotesRequestOptions = symbols => {
+      	return {
+            method: 'GET',
+            uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
+            qs: {
+                'symbol': symbols.join(','),
+                'convert': 'USD'
+            },
+            headers: {
+                'X-CMC_PRO_API_KEY': apiKey
+            },
+            json: true,
+            gzip: true
+      	};
+      },
       now = () => performance.now(),
-      newBacklogEntry = () => { return { dollarValueRequests:[] } },
-      pullCryptoQuotesEventually = (maxWaitMs) => { // pulls quotes if they haven't been pulled within maxWaitMs
-      	  const curTime = now();
-          setTimeout(() => {
-      	    if (lastCryptoQuotesCall <= curTime)
-      	    	getCryptoQuotes();
-      	  }, maxWaitMs);
+      newBacklogEntry = maxWaitMs => { return { dollarValueRequests:[], timeNeededBy: now() + maxWaitMs } },
+      pullCryptoQuotesEventually = timeNeededBy => { // pulls quotes after timeNeededBy, but as close to timeNeededBy as possible
+        const checkTime = () => setTimeout(() => { // (ensures after so that getCryptoQuotes necessarily pulls quotes which call pullCryptoQuotesEventually with their backlog's timeNeededBy)
+        	const curTime = now();
+        	if (curTime >= timeNeededBy)
+        	    getCryptoQuotes();
+        	else
+        		checkTime();
+        }, Math.max(1, Math.ceil(timeNeededBy - now()))); // set timeout for difference between when its needed and now, resetting the timer if it fires a little early
+        checkTime();
       };
 
-// get a map from the supplied coins to their dollar price
+// get the usd price in a promise
 // acceptableOutdatedness is how long ago this data can have been pulled
 // maxWaitMs is how long we can put off sending this request for the sake of batching
 function dollarValue(coin, acceptableOutdatednessMs, maxWaitMs) {
 
-	const curTime = now(),
-	      lookup = cryptoQuotesDataCache.get(coin),
+	const lookup = cryptoQuotesDataCache.get(coin),
+	      curTime = now(),
 	      mustRequest = acceptableOutdatednessMs === 0 || !lookup || !lookup.USD || (curTime - lookup.time) > acceptableOutdatednessMs;
 
 	if (mustRequest) {
 		return new Promise((resolve, reject) => {
-			if (requestBacklog.has(coin))
+			if (requestBacklog.has(coin)) {
 				cryptoQuotesRequestBacklog.dollarValueRequests.push(resolve);
+			    cryptoQuotesRequestBacklog.timeNeededBy = Math.min(curTime + maxWaitMs, cryptoQuotesRequestBacklog.timeNeededBy);
 
-	            const curTime = now();
-
-			    pullCryptoQuotesEventually(maxWaitMs);
-			else {
-				const backlog = newBacklogEntry();
+			    pullCryptoQuotesEventually(cryptoQuotesRequestBacklog.timeNeededBy);
+			} else {
+				const backlog = newBacklogEntry(maxWaitMs);
 
 				backlog.dollarValueRequests.push(resolve);
 				cryptoQuotesRequestBacklog.set(coin, backlog);
 
-				if (cryptoQuotesRequestBacklog.dollarValueRequests.length === 100)
+				if (cryptoQuotesRequestBacklog.size === 100)
 					getCryptoQuotes();
 				else
 					pullCryptoQuotesEventually(maxWaitMs);
@@ -47,45 +63,45 @@ function dollarValue(coin, acceptableOutdatednessMs, maxWaitMs) {
 	} else return new Promise.resolve(lookup.USD);
 }
 
-// requires cryptoQuotesRequestBacklog has some coins, less than or equal to 100
+// will send as many requests as are immediately needed 
 function getCryptoQuotes() {
 
-    const reqTime = now(),
-    /*
-     has the problem that if there are now 150 requests only the "first" (in insertion order) 100 
-    will be sent, but these might not?? be the ones that were time constrained by some max ms wait 
-    which caused this function to be called in the first place  
-    */
-          symbols = Array.from(cryptoQuotesRequestBacklog.keys()).slice(0, 100),
-          requestOptions = {
-              method: 'GET',
-              uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
-              qs: {
-                  'symbol': symbols.join(','),
-                  'convert': 'USD'
-              },
-              headers: {
-                  'X-CMC_PRO_API_KEY': apiKey
-              },
-              json: true,
-              gzip: true
-          };
+	const reqTime = now(),
+	      symbolsSet = new Set();
 
-    lastCryptoQuotesCall = reqTime;
+	cryptoQuotesRequestBacklog.forEach((entry, coin) => {
+		if (reqTime >= entry.timeNeededBy)
+			symbolsSet.add(coin);
+	});
+
+	const numCoinsNeeded = symbols.size;
+
+	if (numCoinsNeeded === 0) // none are immediately needed, we'll get them later
+		return;
+
+	// tack on any additional requests which are needed eventually to bring us up to the nearest 100
+	const symbols = numCoinsNeeded % 100 === 0 ? Array.from(symbolsSet) : symbols = symbols.concat(Array.from(cryptoQuotesRequestBacklog.keys()).filter(coin => !symbolsSet.has(coin)).slice(0, 100 - (numCoinsNeeded % 100)));
+
+	// copy the backlogged requests to fulfill them later, and delete them so they don't get sent twice
+    const backlogCopy = new Map(cryptoQuotesRequestBacklog);
+    symbols.forEach(coin => cryptoQuotesRequestBacklog.delete(coin));
     
-    rp(requestOptions).then(response => {
+    rp(getCryptoQuotesRequestOptions(symbols)).then(response => {
 
-    	symbols.forEach(symbol => {
+    	symbols.forEach(coin => {
     		const USD = response.data[symbol].quote.USD.price;
 
-    		cryptoQuotesRequestBacklog.get(symbol).dollarValueRequests.forEach(resolver => resolver(USD));
+    		backlogCopy.get(coin).dollarValueRequests.forEach(resolver => resolver(USD)); // fulfill the requests from before we called the api
 
-    		cryptoQuotesRequestBacklog.delete(symbol); // no more requests for symbol
+    		if (cryptoQuotesRequestBacklog.has(coin)) { // fulfill any requests which came in after we called the api
+    		    cryptoQuotesRequestBacklog.get(coin).dollarValueRequests.forEach(resolver => resolver(USD));
+    		    cryptoQuotesRequestBacklog.delete(coin); // no more requests for symbol
+    		}
 
-    		if (!cryptoQuotesDataCache.has(symbol))
-    			cryptoQuotesDataCache.set(symbol, {});
+    		if (!cryptoQuotesDataCache.has(coin))
+    			cryptoQuotesDataCache.set(coin, {});
 
-    		const lookup = cryptoQuotesDataCache.get(symbol); // add to the cache
+    		const lookup = cryptoQuotesDataCache.get(coin); // add to the cache
     		lookup.time = reqTime;
     		lookup.USD = USD;
     	});
