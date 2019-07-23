@@ -162,20 +162,20 @@ var coins = [ 'BTC', 'ETH', 'GTO', 'ETC', 'LTC', 'GNT', 'DOGE' ],
 // cap.dollarValue(coins[0], 0, 0);
 // setTimeout(() => cap.dollarValue(coins[0], 1000, 5000).then(usd => console.log(`Got price ${usd} at ${Date.now()}`)), 1100);
 
-// test to see that hitting cutoff on some requests only fills in enough to round up to nearest batch size
+// test to see that hitting cutoff on some requests only fills in enough to round up to nearest batch size (5 hit after 3000, one after 10000)
 // for (var i = 0; i < 6; i++)
 // 	cap.dollarValue(coins[i], 0, i < 3 ? 3000 : 10000).then(console.log);
 
-// test to see that hitting cutoff on some requests fills all of the remaining onces (all will hit after 1000)
+// test to see that hitting cutoff on some requests fills all of the remaining onces (all will hit after 3000)
 // for (var i = 0; i < 4; i++)
 // 	cap.dollarValue(coins[i], 0, i < 3 ? 3000 : 10000).then(console.log);
 
 
-// require('./Snapshots').takeSnapshots();
+require('./Snapshots').takeSnapshots();
 
-// var curTime = util.timestamp(),
-//     otherTime = "July 10th 19, 1:00:18 am";
+var curTime = util.timestamp(),
+    otherTime = "July 10th 19, 1:00:18 am";
 
-// console.log('Delta T: ' + util.deltaTString(curTime, otherTime));
+console.log('Delta T: ' + util.deltaTString(curTime, otherTime));
 
 

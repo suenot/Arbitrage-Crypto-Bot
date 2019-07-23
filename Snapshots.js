@@ -2,6 +2,7 @@ const as = require('./ArraySet'),
       gr = require('./Graph'),
       ex = require('./Exchanges'),
       fs = require('fs'),
+      cap = require('./CoinMarketCap'),
       sha = require('object-hash'),
       { timestamp, runId, getPriceId, log, deltaTString } = require('./Util'),
       arbCycleSnapshots = as.empty(snap => sha(snap.cycle)),
@@ -64,6 +65,18 @@ function updateSnapshots() {
 	      	return { cycle: c, pr: ex.percentReturn(c, 1) };
 	      }).filter(x => typeof x.pr === 'number' && x.pr > 0.01 && x.pr < 0.5).sort((x, y) => y.pr - x.pr), // cycles which could become profitable
 	      arbCycles = as.empty(x => x.hash); // cycles which are currently profitable/which we should snapshot
+
+	for (var i = 0; i < cyclesOnRadar.length; i++) {
+	    const test = cyclesOnRadar[i],
+	          cycle = test.cycle;
+
+	    Promise.all([ cap.percentReturn(cycle[0], ex.endPerStart(cycle[0]), 1000, 1000), cap.percentReturn(cycle[1], ex.endPerStart(cycle[1]), 1000, 1000) ]).then(prs => {
+	    	cycle[0].pr = prs[0];
+	    	cycle[1].pr = prs[1];
+
+	    	console.log('Cycle results: ', JSON.stringify(test, null, 4));
+	    });
+    }
 
 	marketIds = new Set(); // market ids of those to pull
 

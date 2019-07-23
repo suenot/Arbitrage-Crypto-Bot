@@ -4,7 +4,7 @@ const apiKey = '4ee5956e-ef0a-49bd-910f-3aa5b75e4241',
       { log } = require('./Util'),
       rp = require('request-promise'),
       rateLimit = 288000,
-      batchSize = 5,
+      batchSize = 100,
       cryptoQuotesDataCache = new Map(), // cache of all interesting data from the crypto quotes endpoint and the time it was recieved
       cryptoQuotesRequestBacklog = new Map(), // backlog of requests for the cryptocurrency quotes endpoint
       getCryptoQuotesRequestOptions = symbols => {
@@ -12,7 +12,8 @@ const apiKey = '4ee5956e-ef0a-49bd-910f-3aa5b75e4241',
             method: 'GET',
             uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest',
             qs: {
-                'symbol': symbols.join(',')
+                symbol: symbols.join(','),
+                convert: 'USD'
             },
             headers: {
                 'X-CMC_PRO_API_KEY': apiKey
@@ -21,8 +22,11 @@ const apiKey = '4ee5956e-ef0a-49bd-910f-3aa5b75e4241',
             gzip: true
         };
       },
-      validateDeltaT = deltaT => {
-      	return !isNaN(deltaT) && isFinite(deltaT) && deltaT >= 0;
+      validateNumber = number => {
+      	return !isNaN(number) && isFinite(number) && number >= 0;
+      },
+      validateBig = big => {
+      	return !big.isNaN() && big.isFinite() && big.gte(0);
       },
       now = () => performance.now(),
       newBacklogEntry = maxWaitMs => { return { dollarValueRequests:[], timeNeededBy: now() + maxWaitMs }; },
@@ -41,8 +45,10 @@ const apiKey = '4ee5956e-ef0a-49bd-910f-3aa5b75e4241',
 // maxWaitMs is how long we can put off sending this request for the sake of batching
 function dollarValue(coin, acceptableOutdatednessMs, maxWaitMs) {
 
-	if (!validateDeltaT(acceptableOutdatednessMs) || !validateDeltaT(maxWaitMs))
+	if (!validateNumber(acceptableOutdatednessMs) || !validateNumber(maxWaitMs)) {
+		log.error('CoinMarketCap dollar value function called without valid delta time args');
 		return new Error('CoinMarketCap dollar value function called without valid delta time args');
+	}
 
 	const lookup = cryptoQuotesDataCache.get(coin),
 	      curTime = now(),
@@ -126,8 +132,12 @@ function getCryptoQuotes() {
 }
 
 // get percent return of a trade relative to dollars
-function percentReturn(startCoin, endCoin, endPerStart, acceptableOutdatednessMs, maxWaitMs) {
-	return Promise.all([ dollarValue(startCoin, acceptableOutdatednessMs, maxWaitMs), dollarValue(endCoin, acceptableOutdatednessMs, maxWaitMs) ]).then(responses => {
+function percentReturn(edge, endPerStart, acceptableOutdatednessMs, maxWaitMs) {
+	if (!validateBig(endPerStart)) {
+		log.error('CoinMarketCap percent return of edge function called without valid end per start ratio');
+		return new Error('CoinMarketCap percent return of edge function called without valid end per start ratio');
+	}
+	return Promise.all([ dollarValue(edge._s, acceptableOutdatednessMs, maxWaitMs), dollarValue(edge._e, acceptableOutdatednessMs, maxWaitMs) ]).then(responses => {
 		const [ usdPerStart, usdPerEnd ] = responses;
 		return (new big(1)).dividedBy(usdPerStart).times(endPerStart).times(usdPerEnd).minus(1);
 	});

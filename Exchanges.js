@@ -207,7 +207,7 @@ function monitorRequests() {
 
 // given trade edge from start to end on some exchange (and optional price overrides)
 // get the constant you multiply some amount of start by to get the amount of end the trade would give
-// returns a big, not a number, unless there's no market price, then undefined is returned
+// returns a big, not a number, unless there's no market price, which must be checked against NaN due to missing market price
 function endPerStart(edge, priceOverrides) {
     const metadata = edge._m,
     	  start = edge._s,
@@ -224,7 +224,7 @@ function endPerStart(edge, priceOverrides) {
     	  endPerStartNoFees = startIsBase ? marketPrice : (new big(1)).dividedBy(marketPrice),
     	  endPerStart = endPerStartNoFees.times(1 - percentTradeFee);
 
-    return marketPrice.isNaN() ? undefined : endPerStart;
+    return endPerStart;
 }
 
 // requires exchanges are initialized
@@ -237,9 +237,10 @@ function percentReturn(A, c, priceOverrides) {
 	for (var i = 0; i < A.length; i++) {
 
 		const edge = A[i],
+		      { exchangeId } = edge._m,
 		      endWithFees = endPerStart(edge, priceOverrides).times(currentStartHolding);
 
-		if (endWithFees === undefined)
+		if (endWithFees.isNaN()) // endPerStart returned NaN
 			return 'Missing market price';
 		     
 		// console.log(exchange.id, exchange.symbolMap[symbol]);
@@ -254,9 +255,9 @@ function percentReturn(A, c, priceOverrides) {
 
 		// if there's another edge to follow on a different exchange, factor in the cost of doing so
 		if (i !== A.length - 1 && A[i + 1]._m.exchangeId !== exchangeId) {
-			const withdrawalFee = withdrawalFee(edge._m.exchangeId, edge._e);
+			const fixedFee = withdrawalFee(exchangeId, edge._e);
 			
-			currentStartHolding = currentStartHolding.minus(withdrawalFee);
+			currentStartHolding = currentStartHolding.minus(fixedFee);
 		}
 	}
 
@@ -396,7 +397,7 @@ function exchangeDataToFile() {
 	fs.writeFileSync('./priceData/marketPrices' + timestamp() + '.json', JSON.stringify(exchangeCopies));
 }
 
-module.exports = { initializeExchanges, loadPrices, getPrice, percentReturn, getArbGraph, loadExchangesFromFile, exchangeDataToFile };
+module.exports = { initializeExchanges, loadPrices, getPrice, percentReturn, getArbGraph, endPerStart, loadExchangesFromFile, exchangeDataToFile };
 
 // initializeExchanges().then(() => loadPrices(true).then(()  => {
 // 	exchangeDataToFile();
