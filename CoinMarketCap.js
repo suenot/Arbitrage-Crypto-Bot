@@ -4,7 +4,7 @@ const apiKey = '4ee5956e-ef0a-49bd-910f-3aa5b75e4241',
       { log } = require('./Util'),
       rp = require('request-promise'),
       rateLimit = 288000,
-      batchSize = 100,
+      batchSize = 5,
       cryptoQuotesDataCache = new Map(), // cache of all interesting data from the crypto quotes endpoint and the time it was recieved
       cryptoQuotesRequestBacklog = new Map(), // backlog of requests for the cryptocurrency quotes endpoint
       getCryptoQuotesRequestOptions = symbols => {
@@ -67,7 +67,7 @@ function dollarValue(coin, acceptableOutdatednessMs, maxWaitMs) {
 				backlog.dollarValueRequests.push(resolve);
 				cryptoQuotesRequestBacklog.set(coin, backlog);
 
-				if (cryptoQuotesRequestBacklog.size % batchSize === 0)
+				if (cryptoQuotesRequestBacklog.size % batchSize === 0) //size is nonzero because some were just added
 					getCryptoQuotes();
 				else
 					pullCryptoQuotesEventually(backlog.timeNeededBy);
@@ -87,48 +87,49 @@ function getCryptoQuotes() {
 			symbolsSet.add(coin);
 	});
 
-	const numCoinsNeeded = symbolsSet.size;
+	const numCoinsNeeded = symbolsSet.size,
+        backlogSize = cryptoQuotesRequestBacklog.size;
+
+  log.info(`CoinMarketCap: ${numCoinsNeeded} coins hit their time cutoff, ${backlogSize} coins are backlogged`);
 
 	// none are needed at all, or none are immediately needed and the ones we could send don't fit nicely into a batch, so don't send
 	// (no need to send the largest multiple of batchsize requests queued in the second case because whenever we hit any multiple of batchsize we'd already have sent them)
-	if (cryptoQuotesRequestBacklog.size === 0 || (numCoinsNeeded === 0 && cryptoQuotesRequestBacklog.size % batchSize !== 0))
+	if (backlogSize === 0 || (numCoinsNeeded === 0 && (backlogSize % batchSize !== 0)))
 		return;
-
-	log.info(`CoinMarketCap: ${numCoinsNeeded} coins hit their time cutoff`);
-
+  
 	// tack on any additional requests which are needed eventually to bring us up to the nearest batchSize (no extra multiples of batchSize for same reason as above)
 	const symbols = numCoinsNeeded % batchSize === 0 && numCoinsNeeded !== 0 ? Array.from(symbolsSet) : Array.from(symbolsSet).concat(Array.from(cryptoQuotesRequestBacklog.keys()).filter(coin => !symbolsSet.has(coin)).slice(0, batchSize - (numCoinsNeeded % batchSize)));
 
 	log.info(`CoinMarketCap: ${symbols.length} coins were requested`);
 
 	// copy the backlogged requests to fulfill them upon response, and delete them so they don't get sent twice
-    const backlogCopy = new Map(cryptoQuotesRequestBacklog);
-    symbols.forEach(coin => cryptoQuotesRequestBacklog.delete(coin));
-    
-    rp(getCryptoQuotesRequestOptions(symbols)).then(response => {
+  const backlogCopy = new Map(cryptoQuotesRequestBacklog);
+  symbols.forEach(coin => cryptoQuotesRequestBacklog.delete(coin));
+  
+  rp(getCryptoQuotesRequestOptions(symbols)).then(response => {
 
-    	symbols.forEach(coin => {
-    		const USD = response.data[coin].quote.USD.price;
+  	symbols.forEach(coin => {
+  		const USD = response.data[coin].quote.USD.price;
 
-    		backlogCopy.get(coin).dollarValueRequests.forEach(resolver => resolver(USD)); // fulfill the requests from before we called the api
+  		backlogCopy.get(coin).dollarValueRequests.forEach(resolver => resolver(USD)); // fulfill the requests from before we called the api
 
-    		if (cryptoQuotesRequestBacklog.has(coin)) { // fulfill any requests which came in after we called the api
-    			log.info(`CoinMarketCap: Coin ${coin} fulfilled which came in after request was sent`);
-    		    cryptoQuotesRequestBacklog.get(coin).dollarValueRequests.forEach(resolver => resolver(USD));
-    		    cryptoQuotesRequestBacklog.delete(coin); // no more requests for symbol
-    		}
+  		if (cryptoQuotesRequestBacklog.has(coin)) { // fulfill any requests which came in after we called the api
+  			log.info(`CoinMarketCap: Coin ${coin} fulfilled which came in after request was sent`);
+  		    cryptoQuotesRequestBacklog.get(coin).dollarValueRequests.forEach(resolver => resolver(USD));
+  		    cryptoQuotesRequestBacklog.delete(coin); // no more requests for symbol
+  		}
 
-    		if (!cryptoQuotesDataCache.has(coin))
-    			cryptoQuotesDataCache.set(coin, {});
+  		if (!cryptoQuotesDataCache.has(coin))
+  			cryptoQuotesDataCache.set(coin, {});
 
-    		const lookup = cryptoQuotesDataCache.get(coin); // add to the cache
-    		lookup.time = reqTime;
-    		lookup.USD = USD;
-    	});
+  		const lookup = cryptoQuotesDataCache.get(coin); // add to the cache
+  		lookup.time = reqTime;
+  		lookup.USD = USD;
+  	});
 
-    }).catch((err) => {
-        log.error(`CoinMarketCap API call error: ${err.message}`);
-    });
+  }).catch((err) => {
+      log.error(`CoinMarketCap API call error: ${err.message}`);
+  });
 }
 
 // get percent return of a trade relative to dollars
